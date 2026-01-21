@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import ReactMarkdown from "react-markdown"; // <-- INI YANG BIKIN TEKS RAPI
 import {
   PieChart,
   Plus,
@@ -20,8 +21,8 @@ import {
   Pencil,
   Search,
   Settings,
-  Bot, // Icon Robot Baru!
-  Sparkles, // Icon Cantik
+  Bot,
+  Sparkles,
   Home,
   AlertCircle,
 } from "lucide-react";
@@ -50,6 +51,7 @@ const EXPENSE_CATEGORIES = [
   "Bills & Utilities",
   "Entertainment",
   "Health",
+  "Invest",
   "Others",
 ];
 const INCOME_CATEGORIES = ["Salary", "Bonus", "Gift", "Investment", "Others"];
@@ -66,7 +68,7 @@ export default function HomePage() {
   const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false);
   const [tempBudget, setTempBudget] = useState("");
 
-  // AI ADVISOR STATES (BARU)
+  // AI ADVISOR STATES
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [aiAdvice, setAiAdvice] = useState("");
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
@@ -134,11 +136,10 @@ export default function HomePage() {
     setTotalBalance(inc - exp);
   };
 
-  // --- AI ADVISOR LOGIC (BARU) ---
+  // --- AI ADVISOR LOGIC ---
   const handleAskAI = async () => {
     setIsAnalyzing(true);
     try {
-      // Ambil 5 transaksi terbesar (expense) untuk dianalisa
       const topExpenses = transactions
         .filter((t) => t.type === "expense")
         .sort((a, b) => b.amount - a.amount)
@@ -158,7 +159,7 @@ export default function HomePage() {
         setAiAdvice(data.advice);
         setIsAiModalOpen(true);
       } else {
-        showToast("AI sedang sibuk, coba lagi.", "error");
+        showToast(data.advice || "AI sedang sibuk.", "error"); // Tampilkan pesan fallback
       }
     } catch (error) {
       showToast("Gagal menghubungi AI.", "error");
@@ -553,42 +554,68 @@ export default function HomePage() {
           </Link>
         </nav>
 
-        {/* AI ADVISOR MODAL (BARU) */}
+        {/* --- AI ADVISOR MODAL (NEW: Scrollable & Markdown) --- */}
         {isAiModalOpen && (
           <div
-            className="absolute inset-0 z-90 flex items-end sm:items-center justify-center sm:px-4 bg-black/60 backdrop-blur-sm"
+            className="absolute inset-0 z-90 flex items-center justify-center px-4 bg-black/60 backdrop-blur-sm"
             onClick={() => setIsAiModalOpen(false)}
           >
             <div
-              className="bg-white w-full max-w-sm rounded-t-3xl sm:rounded-3xl p-6 relative animate-in slide-in-from-bottom duration-300 h-[80vh] sm:h-auto flex flex-col"
+              className="bg-white w-full max-w-sm rounded-3xl p-6 relative animate-in zoom-in-95 duration-300 shadow-2xl flex flex-col max-h-[85vh]"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex items-center gap-3 mb-6 border-b border-gray-100 pb-4">
-                <div className="bg-linear-to-tr from-blue-500 to-purple-600 p-3 rounded-full text-white shadow-lg">
+              {/* HEADER */}
+              <div className="flex items-center gap-3 mb-4 border-b border-gray-100 pb-4 shrink-0">
+                <div className="bg-linear-to-tr from-blue-500 to-purple-600 p-3 rounded-full text-white shadow-lg shadow-blue-500/30">
                   <Sparkles size={24} />
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-gray-900">
+                  <h3 className="text-xl font-bold text-gray-900 leading-none">
                     Financial Advisor
                   </h3>
-                  <p className="text-xs text-gray-500">Powered by Gemini AI</p>
+                  <p className="text-xs text-blue-500 font-medium mt-1">
+                    Powered by Gemini AI
+                  </p>
                 </div>
                 <button
                   onClick={() => setIsAiModalOpen(false)}
-                  className="ml-auto bg-gray-100 p-2 rounded-full text-gray-500"
+                  className="ml-auto bg-gray-50 hover:bg-gray-100 p-2 rounded-full text-gray-400 hover:text-gray-600 transition-colors"
                 >
                   <X size={20} />
                 </button>
               </div>
-              <div className="flex-1 overflow-y-auto text-sm text-gray-700 leading-relaxed space-y-4 whitespace-pre-wrap">
-                {/* Render Text AI */}
-                {aiAdvice}
+
+              {/* CONTENT (MARKDOWN & SCROLLABLE) */}
+              <div className="overflow-y-auto text-sm text-gray-700 leading-relaxed space-y-4 whitespace-pre-wrap pr-2 mb-4 custom-scrollbar">
+                <ReactMarkdown
+                  components={{
+                    strong: ({ node, ...props }) => (
+                      <span className="font-bold text-gray-900" {...props} />
+                    ),
+                    ul: ({ node, ...props }) => (
+                      <ul className="list-disc ml-4 space-y-1" {...props} />
+                    ),
+                    ol: ({ node, ...props }) => (
+                      <ol className="list-decimal ml-4 space-y-1" {...props} />
+                    ),
+                    li: ({ node, ...props }) => (
+                      <li className="pl-1" {...props} />
+                    ),
+                    p: ({ node, ...props }) => (
+                      <p className="mb-2" {...props} />
+                    ),
+                  }}
+                >
+                  {aiAdvice}
+                </ReactMarkdown>
               </div>
+
+              {/* FOOTER BUTTON */}
               <button
                 onClick={() => setIsAiModalOpen(false)}
-                className="mt-6 w-full bg-gray-900 text-white py-3 rounded-xl font-bold hover:bg-gray-800 transition"
+                className="w-full bg-gray-900 text-white py-3.5 rounded-xl font-bold hover:bg-gray-800 active:scale-[0.98] transition-all shrink-0 shadow-lg"
               >
-                Kembali
+                Siap, Mengerti!
               </button>
             </div>
           </div>
@@ -632,7 +659,7 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* TOAST, DETAIL MODAL, DELETE MODAL, FORM DRAWER (Sama seperti sebelumnya) */}
+        {/* TOAST, DETAIL MODAL, DELETE MODAL, FORM DRAWER */}
         {toast.show && (
           <div
             className={`fixed top-4 left-1/2 transform -translate-x-1/2 z-90 transition-all duration-300 ${toast.show ? "translate-y-0 opacity-100" : "-translate-y-10 opacity-0 pointer-events-none"}`}
@@ -644,7 +671,7 @@ export default function HomePage() {
                 <CheckCircle size={18} />
               ) : (
                 <AlertCircle size={18} />
-              )}{" "}
+              )}
               <span className="text-sm font-medium">{toast.message}</span>
             </div>
           </div>
