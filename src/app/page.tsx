@@ -16,7 +16,7 @@ import {
   AlertCircle,
   AlertTriangle,
   ArrowUpDown,
-  Tag, // Import Icon Tag
+  Tag,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
@@ -26,7 +26,7 @@ interface Transaction {
   title: string;
   amount: number;
   type: "income" | "expense";
-  category: string; // New Category Column
+  category: string;
   date: string;
 }
 
@@ -82,7 +82,7 @@ export default function HomePage() {
   const [formData, setFormData] = useState({
     title: "",
     amount: "",
-    category: "", // New State
+    category: "", 
     type: "expense" as "income" | "expense",
   });
 
@@ -149,7 +149,6 @@ export default function HomePage() {
     e.preventDefault();
     if (!formData.title || !formData.amount) return;
 
-    // Default category if empty
     const finalCategory = formData.category || "Others";
 
     setIsSubmitting(true);
@@ -159,7 +158,7 @@ export default function HomePage() {
           title: formData.title,
           amount: Number(formData.amount),
           type: formData.type,
-          category: finalCategory, // Save Category
+          category: finalCategory,
           date: new Date().toISOString(),
         },
       ]);
@@ -304,35 +303,38 @@ export default function HomePage() {
               {sortedTransactions.map((item) => (
                 <div
                   key={item.id}
-                  className="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-gray-100 group transition-all hover:shadow-md"
+                  className="flex items-center justify-between bg-white p-4 rounded-xl shadow-sm border border-gray-100 group transition-all hover:shadow-md"
                 >
-                  <div className="flex items-center gap-4">
-                    <div className={`p-3 rounded-full ${
+                  {/* LEFT SIDE: Info (Flexible width, truncates if long) */}
+                  <div className="flex items-center gap-3 flex-1 min-w-0 mr-2">
+                    <div className={`p-3 rounded-full flex-shrink-0 ${
                       item.type === "income" ? "bg-green-100 text-green-600" : "bg-red-100 text-red-600"
                     }`}>
                       {item.type === "income" ? <ArrowUpCircle size={20} /> : <Wallet size={20} />}
                     </div>
-                    <div>
-                      <h3 className="font-bold text-gray-800 text-sm line-clamp-1">{item.title}</h3>
-                      {/* SHOW CATEGORY HERE */}
-                      <div className="flex items-center gap-2 text-xs text-gray-400">
-                        <span className="bg-gray-100 px-1.5 py-0.5 rounded text-[10px] font-medium text-gray-500">
+                    <div className="flex flex-col min-w-0">
+                      <h3 className="font-bold text-gray-800 text-sm truncate">{item.title}</h3>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className="bg-gray-100 px-1.5 py-0.5 rounded text-[10px] font-medium text-gray-500 whitespace-nowrap">
                           {item.category || "Others"}
                         </span>
-                        <span>{formatDate(item.date)}</span>
+                        <span className="text-[10px] text-gray-400 whitespace-nowrap">
+                          {formatDate(item.date)}
+                        </span>
                       </div>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3">
-                    <p className={`font-bold text-xs sm:text-sm ${
+                  {/* RIGHT SIDE: Amount & Action (Fixed width, never shrinks) */}
+                  <div className="flex items-center gap-3 flex-shrink-0">
+                    <p className={`font-bold text-xs sm:text-sm whitespace-nowrap ${
                       item.type === "income" ? "text-green-600" : "text-gray-800"
                     }`}>
                       {item.type === "expense" ? "-" : "+"} {formatCurrency(item.amount)}
                     </p>
                     <button
                       onClick={() => confirmDelete(item.id)}
-                      className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-full transition-all"
+                      className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-full transition-all flex-shrink-0"
                     >
                       <Trash2 size={18} />
                     </button>
@@ -401,7 +403,6 @@ export default function HomePage() {
               </div>
               
               <form onSubmit={handleSubmit} className="space-y-4">
-                {/* PILIHAN TIPE (Income/Expense) */}
                 <div className="grid grid-cols-2 gap-3 mb-4">
                   <button
                     type="button"
@@ -448,7 +449,6 @@ export default function HomePage() {
                   />
                 </div>
 
-                {/* SELECT CATEGORY (DROPDOWN) */}
                 <div>
                   <label className="block text-xs font-medium text-gray-500 mb-1">Category</label>
                   <div className="relative">
