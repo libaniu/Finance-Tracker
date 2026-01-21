@@ -192,7 +192,7 @@ export default function HomePage() {
     : "";
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-GB", { // en-GB for DD/MM/YYYY format
+    return new Date(dateString).toLocaleDateString("en-GB", {
       day: "numeric",
       month: "short",
       year: "2-digit",
@@ -202,10 +202,10 @@ export default function HomePage() {
   };
 
   return (
-    // 1. OUTER BACKGROUND (Desktop Only)
+    // 1. OUTER BACKGROUND
     <div className="bg-gray-100 min-h-screen flex justify-center">
 
-      {/* 2. APP CONTAINER (Mobile Shape) */}
+      {/* 2. APP CONTAINER */}
       <div className="w-full max-w-md bg-slate-50 h-[100dvh] flex flex-col relative overflow-hidden shadow-2xl">
         
         {/* HEADER */}
@@ -222,26 +222,34 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div className="bg-white text-gray-800 p-4 rounded-2xl shadow-lg flex justify-between items-center gap-4">
-            <div className="flex items-center gap-3 w-1/2">
-              <div className="bg-green-100 p-2 rounded-full text-green-600">
-                <ArrowUpCircle size={24} />
+          {/* SUMMARY CARD (FIXED LAYOUT) */}
+          <div className="bg-white text-gray-800 p-3 rounded-2xl shadow-lg flex justify-between items-center gap-2">
+            
+            {/* Income Block */}
+            <div className="flex items-center gap-2 w-1/2 overflow-hidden">
+              <div className="bg-green-100 p-1.5 rounded-full text-green-600 flex-shrink-0">
+                <ArrowUpCircle size={20} />
               </div>
-              <div>
-                <p className="text-xs text-gray-500">Income</p>
-                <p className="font-bold text-sm text-green-600">
+              <div className="min-w-0"> {/* min-w-0 penting biar text bisa truncate/wrap */}
+                <p className="text-[10px] text-gray-500">Income</p>
+                <p className="font-bold text-xs sm:text-sm text-green-600 truncate">
                   {isLoading ? "..." : formatCurrency(income)}
                 </p>
               </div>
             </div>
-            <div className="w-px h-8 bg-gray-200"></div>
-            <div className="flex items-center gap-3 w-1/2 pl-2">
-              <div className="bg-red-100 p-2 rounded-full text-red-600">
-                <ArrowDownCircle size={24} />
+
+            {/* Divider */}
+            <div className="w-px h-8 bg-gray-200 flex-shrink-0"></div>
+
+            {/* Expense Block */}
+            <div className="flex items-center gap-2 w-1/2 pl-1 overflow-hidden">
+              <div className="bg-red-100 p-1.5 rounded-full text-red-600 flex-shrink-0">
+                <ArrowDownCircle size={20} />
               </div>
-              <div>
-                <p className="text-xs text-gray-500">Expense</p>
-                <p className="font-bold text-sm text-red-600">
+              <div className="min-w-0">
+                <p className="text-[10px] text-gray-500">Expense</p>
+                {/* Gunakan text-xs agar muat di HP, dan truncate biar ga nabrak */}
+                <p className="font-bold text-xs sm:text-sm text-red-600 truncate" title={formatCurrency(expense)}>
                   {isLoading ? "..." : formatCurrency(expense)}
                 </p>
               </div>
@@ -293,13 +301,13 @@ export default function HomePage() {
                       {item.type === "income" ? <ArrowUpCircle size={20} /> : <Wallet size={20} />}
                     </div>
                     <div>
-                      <h3 className="font-bold text-gray-800 text-sm">{item.title}</h3>
+                      <h3 className="font-bold text-gray-800 text-sm line-clamp-1">{item.title}</h3>
                       <p className="text-xs text-gray-400">{formatDate(item.date)}</p>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-3">
-                    <p className={`font-bold text-sm ${
+                    <p className={`font-bold text-xs sm:text-sm ${
                       item.type === "income" ? "text-green-600" : "text-gray-800"
                     }`}>
                       {item.type === "expense" ? "-" : "+"} {formatCurrency(item.amount)}

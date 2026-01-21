@@ -77,6 +77,12 @@ export default function StatsPage() {
     .sort((a, b) => b.amount - a.amount)
     .slice(0, 5);
 
+  // --- LOGIC 3: BAR CHART (Top 5 Incomes) ---
+  const topIncomes = transactions
+    .filter((t) => t.type === "income")
+    .sort((a, b) => b.amount - a.amount)
+    .slice(0, 5);
+
   return (
     // 1. OUTER WRAPPER (Desktop Background)
     <div className="bg-gray-100 min-h-screen flex justify-center">
@@ -132,7 +138,7 @@ export default function StatsPage() {
                 </div>
               </div>
 
-              {/* CHART 2: BAR CHART */}
+              {/* CHART 2: TOP 5 EXPENSES */}
               <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
                 <h3 className="font-bold text-gray-700 mb-2 text-center">Top 5 Expenses</h3>
                 <div className="h-64 w-full text-xs">
@@ -143,17 +149,46 @@ export default function StatsPage() {
                       <YAxis 
                         dataKey="title" 
                         type="category" 
-                        width={110} // DIPERLEBAR: Agar nama barang panjang muat
+                        width={110} 
                         tick={{fontSize: 10}}
                       />
                       <Tooltip 
                         cursor={{fill: 'transparent'}}
                         formatter={(value: any) => `Rp ${value.toLocaleString("id-ID")}`}
                       />
-                      {/* FIX: minPointSize agar data kecil tetap terlihat minimal 10px */}
                       <Bar 
                         dataKey="amount" 
-                        fill="#ef4444" 
+                        fill="#ef4444" // RED
+                        radius={[0, 4, 4, 0]} 
+                        barSize={20}
+                        minPointSize={10} 
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              {/* CHART 3: TOP 5 INCOMES */}
+              <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+                <h3 className="font-bold text-gray-700 mb-2 text-center">Top 5 Incomes</h3>
+                <div className="h-64 w-full text-xs">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={topIncomes} layout="vertical" margin={{ left: 0, right: 20 }}>
+                      <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                      <XAxis type="number" hide />
+                      <YAxis 
+                        dataKey="title" 
+                        type="category" 
+                        width={110} 
+                        tick={{fontSize: 10}}
+                      />
+                      <Tooltip 
+                        cursor={{fill: 'transparent'}}
+                        formatter={(value: any) => `Rp ${value.toLocaleString("id-ID")}`}
+                      />
+                      <Bar 
+                        dataKey="amount" 
+                        fill="#10b981" // GREEN
                         radius={[0, 4, 4, 0]} 
                         barSize={20}
                         minPointSize={10} 
