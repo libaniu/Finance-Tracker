@@ -16,6 +16,7 @@ import {
   AlertCircle,
   AlertTriangle,
   ArrowUpDown,
+  Tag, // Import Icon Tag
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
@@ -25,6 +26,7 @@ interface Transaction {
   title: string;
   amount: number;
   type: "income" | "expense";
+  category: string; // New Category Column
   date: string;
 }
 
@@ -33,6 +35,25 @@ interface ToastState {
   message: string;
   type: "success" | "error";
 }
+
+// --- CATEGORIES (ENGLISH) ---
+const EXPENSE_CATEGORIES = [
+  "Food & Beverage",
+  "Transportation",
+  "Shopping",
+  "Bills & Utilities",
+  "Entertainment",
+  "Health",
+  "Others",
+];
+
+const INCOME_CATEGORIES = [
+  "Salary",
+  "Bonus",
+  "Gift",
+  "Investment",
+  "Others",
+];
 
 export default function HomePage() {
   // --- MAIN STATE ---
@@ -61,6 +82,7 @@ export default function HomePage() {
   const [formData, setFormData] = useState({
     title: "",
     amount: "",
+    category: "", // New State
     type: "expense" as "income" | "expense",
   });
 
@@ -127,6 +149,9 @@ export default function HomePage() {
     e.preventDefault();
     if (!formData.title || !formData.amount) return;
 
+    // Default category if empty
+    const finalCategory = formData.category || "Others";
+
     setIsSubmitting(true);
     try {
       const { error } = await supabase.from("transactions").insert([
@@ -134,13 +159,14 @@ export default function HomePage() {
           title: formData.title,
           amount: Number(formData.amount),
           type: formData.type,
+          category: finalCategory, // Save Category
           date: new Date().toISOString(),
         },
       ]);
 
       if (error) throw error;
 
-      setFormData({ title: "", amount: "", type: "expense" });
+      setFormData({ title: "", amount: "", category: "", type: "expense" });
       setIsDrawerOpen(false);
       fetchTransactions();
       showToast("Transaction saved successfully!", "success");
@@ -202,10 +228,7 @@ export default function HomePage() {
   };
 
   return (
-    // 1. OUTER BACKGROUND
     <div className="bg-gray-100 min-h-screen flex justify-center">
-
-      {/* 2. APP CONTAINER */}
       <div className="w-full max-w-md bg-slate-50 h-[100dvh] flex flex-col relative overflow-hidden shadow-2xl">
         
         {/* HEADER */}
@@ -222,34 +245,26 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* SUMMARY CARD (FIXED LAYOUT) */}
           <div className="bg-white text-gray-800 p-3 rounded-2xl shadow-lg flex justify-between items-center gap-2">
-            
-            {/* Income Block */}
             <div className="flex items-center gap-2 w-1/2 overflow-hidden">
               <div className="bg-green-100 p-1.5 rounded-full text-green-600 flex-shrink-0">
                 <ArrowUpCircle size={20} />
               </div>
-              <div className="min-w-0"> {/* min-w-0 penting biar text bisa truncate/wrap */}
+              <div className="min-w-0">
                 <p className="text-[10px] text-gray-500">Income</p>
                 <p className="font-bold text-xs sm:text-sm text-green-600 truncate">
                   {isLoading ? "..." : formatCurrency(income)}
                 </p>
               </div>
             </div>
-
-            {/* Divider */}
             <div className="w-px h-8 bg-gray-200 flex-shrink-0"></div>
-
-            {/* Expense Block */}
             <div className="flex items-center gap-2 w-1/2 pl-1 overflow-hidden">
               <div className="bg-red-100 p-1.5 rounded-full text-red-600 flex-shrink-0">
                 <ArrowDownCircle size={20} />
               </div>
               <div className="min-w-0">
                 <p className="text-[10px] text-gray-500">Expense</p>
-                {/* Gunakan text-xs agar muat di HP, dan truncate biar ga nabrak */}
-                <p className="font-bold text-xs sm:text-sm text-red-600 truncate" title={formatCurrency(expense)}>
+                <p className="font-bold text-xs sm:text-sm text-red-600 truncate">
                   {isLoading ? "..." : formatCurrency(expense)}
                 </p>
               </div>
@@ -259,10 +274,8 @@ export default function HomePage() {
 
         {/* MAIN CONTENT */}
         <main className="flex-1 px-6 pt-6 pb-6 overflow-y-auto">
-          
-          {/* Filter */}
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-bold text-gray-800">Transactions</h2>
+            <h2 className="text-lg font-bold text-gray-800">Recent Transactions</h2>
             <div className="relative">
               <ArrowUpDown size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
               <select
@@ -278,7 +291,6 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* List */}
           {isLoading ? (
             <div className="flex justify-center py-10">
               <Loader2 className="animate-spin text-blue-600" />
@@ -302,7 +314,13 @@ export default function HomePage() {
                     </div>
                     <div>
                       <h3 className="font-bold text-gray-800 text-sm line-clamp-1">{item.title}</h3>
-                      <p className="text-xs text-gray-400">{formatDate(item.date)}</p>
+                      {/* SHOW CATEGORY HERE */}
+                      <div className="flex items-center gap-2 text-xs text-gray-400">
+                        <span className="bg-gray-100 px-1.5 py-0.5 rounded text-[10px] font-medium text-gray-500">
+                          {item.category || "Others"}
+                        </span>
+                        <span>{formatDate(item.date)}</span>
+                      </div>
                     </div>
                   </div>
 
@@ -331,7 +349,6 @@ export default function HomePage() {
             <Home size={24} />
             <span className="text-[10px] font-medium mt-1">Home</span>
           </Link>
-
           <div className="relative -top-8">
             <button
               onClick={() => setIsDrawerOpen(true)}
@@ -340,7 +357,6 @@ export default function HomePage() {
               <Plus size={32} />
             </button>
           </div>
-
           <Link href="/stats" className="flex flex-col items-center text-gray-400 hover:text-blue-600 transition-colors">
             <PieChart size={24} />
             <span className="text-[10px] font-medium mt-1">Stats</span>
@@ -348,8 +364,6 @@ export default function HomePage() {
         </nav>
 
         {/* --- OVERLAYS --- */}
-        
-        {/* Toast */}
         <div className={`fixed top-4 left-1/2 transform -translate-x-1/2 z-[60] transition-all duration-300 ${
           toast.show ? "translate-y-0 opacity-100" : "-translate-y-10 opacity-0 pointer-events-none"
         }`}>
@@ -361,65 +375,60 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Modal Delete */}
         {deleteModal.show && (
           <div className="absolute inset-0 z-50 flex items-center justify-center px-4">
-            <div
-              className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
-              onClick={() => setDeleteModal({ show: false, id: null })}
-            ></div>
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity" onClick={() => setDeleteModal({ show: false, id: null })}></div>
             <div className="bg-white w-full max-w-xs p-6 rounded-2xl shadow-2xl relative z-10 animate-in zoom-in-95 duration-200">
               <div className="flex flex-col items-center text-center">
-                <div className="bg-red-100 p-3 rounded-full text-red-600 mb-4">
-                  <AlertTriangle size={32} />
-                </div>
+                <div className="bg-red-100 p-3 rounded-full text-red-600 mb-4"><AlertTriangle size={32} /></div>
                 <h3 className="text-lg font-bold text-gray-900 mb-2">Delete Transaction?</h3>
-                <p className="text-sm text-gray-500 mb-6">
-                  This action cannot be undone. Are you sure?
-                </p>
-                <div className="flex gap-3 w-full">
-                  <button
-                    onClick={() => setDeleteModal({ show: false, id: null })}
-                    className="flex-1 py-2.5 rounded-xl text-gray-700 font-medium hover:bg-gray-100 transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={executeDelete}
-                    className="flex-1 py-2.5 rounded-xl bg-red-600 text-white font-medium hover:bg-red-700 transition-colors shadow-lg shadow-red-600/30"
-                  >
-                    Yes, Delete
-                  </button>
+                <div className="flex gap-3 w-full mt-4">
+                  <button onClick={() => setDeleteModal({ show: false, id: null })} className="flex-1 py-2.5 rounded-xl text-gray-700 font-medium hover:bg-gray-100 transition-colors">Cancel</button>
+                  <button onClick={executeDelete} className="flex-1 py-2.5 rounded-xl bg-red-600 text-white font-medium hover:bg-red-700 transition-colors">Delete</button>
                 </div>
               </div>
             </div>
           </div>
         )}
 
-        {/* Drawer Add */}
         {isDrawerOpen && (
           <div className="absolute inset-0 z-50 flex flex-col justify-end">
-            <div
-              className="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
-              onClick={() => setIsDrawerOpen(false)}
-            ></div>
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity" onClick={() => setIsDrawerOpen(false)}></div>
             <div className="bg-white rounded-t-4xl p-6 relative z-10 animate-in slide-in-from-bottom duration-300">
               <div className="flex justify-between items-center mb-6">
                 <h3 className="text-xl font-bold text-gray-800">Add Transaction</h3>
-                <button
-                  onClick={() => setIsDrawerOpen(false)}
-                  className="bg-gray-100 p-2 rounded-full text-gray-500"
-                >
-                  <X size={20} />
-                </button>
+                <button onClick={() => setIsDrawerOpen(false)} className="bg-gray-100 p-2 rounded-full text-gray-500"><X size={20} /></button>
               </div>
+              
               <form onSubmit={handleSubmit} className="space-y-4">
+                {/* PILIHAN TIPE (Income/Expense) */}
+                <div className="grid grid-cols-2 gap-3 mb-4">
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, type: "expense", category: "" })}
+                    className={`p-3 rounded-xl font-medium text-sm transition-all ${
+                      formData.type === "expense" ? "bg-red-100 text-red-600 border-2 border-red-200" : "bg-gray-50 text-gray-400"
+                    }`}
+                  >
+                    Expense
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, type: "income", category: "" })}
+                    className={`p-3 rounded-xl font-medium text-sm transition-all ${
+                      formData.type === "income" ? "bg-green-100 text-green-600 border-2 border-green-200" : "bg-gray-50 text-gray-400"
+                    }`}
+                  >
+                    Income
+                  </button>
+                </div>
+
                 <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">Transaction Title</label>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Title</label>
                   <input
                     type="text"
                     placeholder="e.g. Coffee"
-                    className="w-full bg-gray-50 p-4 rounded-xl font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-100 placeholder:font-normal"
+                    className="w-full bg-gray-50 p-4 rounded-xl font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-100"
                     value={formData.title}
                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                     required
@@ -427,7 +436,7 @@ export default function HomePage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">Amount (IDR)</label>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Amount</label>
                   <input
                     type="text"
                     inputMode="numeric"
@@ -439,26 +448,26 @@ export default function HomePage() {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setFormData({ ...formData, type: "expense" })}
-                    className={`p-3 rounded-xl font-medium text-sm transition-all ${
-                      formData.type === "expense" ? "bg-red-100 text-red-600 border-2 border-red-200" : "bg-gray-50 text-gray-400"
-                    }`}
-                  >
-                    Expense
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setFormData({ ...formData, type: "income" })}
-                    className={`p-3 rounded-xl font-medium text-sm transition-all ${
-                      formData.type === "income" ? "bg-green-100 text-green-600 border-2 border-green-200" : "bg-gray-50 text-gray-400"
-                    }`}
-                  >
-                    Income
-                  </button>
+                {/* SELECT CATEGORY (DROPDOWN) */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Category</label>
+                  <div className="relative">
+                    <Tag size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"/>
+                    <select
+                      value={formData.category}
+                      onChange={(e) => setFormData({...formData, category: e.target.value})}
+                      className="w-full bg-gray-50 p-4 pl-10 rounded-xl font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-100 appearance-none"
+                      required
+                    >
+                      <option value="" disabled>Select Category</option>
+                      {formData.type === 'expense' 
+                        ? EXPENSE_CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)
+                        : INCOME_CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)
+                      }
+                    </select>
+                  </div>
                 </div>
+
                 <button
                   type="submit"
                   disabled={isSubmitting}
