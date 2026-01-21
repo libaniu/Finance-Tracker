@@ -4,24 +4,22 @@ import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
 
-// 1. KONFIGURASI METADATA & MANIFEST
 export const metadata: Metadata = {
-  title: "My Wallet",
+  title: "Myllet",
   description: "Simple Personal Finance Tracker",
-  manifest: "/manifest.json", // Link ke file manifest
+  manifest: "/manifest.json",
   icons: {
-    icon: "/icon-192x192.png", // Icon di tab browser
-    apple: "/icon-192x192.png", // Icon di iPhone
+    icon: "/icon-192x192.png",
+    apple: "/icon-192x192.png",
   },
 };
 
-// 2. KONFIGURASI VIEWPORT (Wajib untuk PWA di HP)
 export const viewport: Viewport = {
-  themeColor: "#2563eb", // Warna biru status bar HP (sesuai header)
+  themeColor: "#2563eb",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
-  userScalable: false, // Biar user gak bisa zoom-in/out sembarangan
+  userScalable: false,
 };
 
 export default function RootLayout({
@@ -31,7 +29,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={inter.className}>{children}</body>
+      <body className={inter.className}>
+        {/* Konten website (children) langsung dimasukkan di sini */}
+        {children}
+      </body>
     </html>
   );
 }
