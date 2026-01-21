@@ -253,7 +253,7 @@ export default function StatsPage() {
         </main>
 
         {/* NAVBAR */}
-        <nav className="flex-none bg-white border-t border-gray-100 py-3 px-8 flex justify-between items-center z-40 shadow-[0_-5px_10px_rgba(0,0,0,0.02)]">
+        <nav className="flex-none bg-white border-t border-gray-100 py-3 px-15 flex justify-between items-center z-40 shadow-[0_-5px_10px_rgba(0,0,0,0.02)]">
           <Link href="/" className="flex flex-col items-center text-gray-400 hover:text-blue-600 transition-colors">
             <Home size={24} />
             <span className="text-[10px] font-medium mt-1">Home</span>
