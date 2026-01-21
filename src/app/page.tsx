@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   Home,
   PieChart,
@@ -19,7 +19,7 @@ import {
   Tag,
   Calendar,
   Clock,
-  Pencil, // ICON BARU
+  Pencil,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
@@ -59,19 +59,20 @@ export default function HomePage() {
   const [sortBy, setSortBy] = useState("date-desc");
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  // EDIT STATE (BARU)
-  const [editingId, setEditingId] = useState<number | null>(null); // Menyimpan ID yang sedang diedit
+  const [editingId, setEditingId] = useState<number | null>(null);
 
   // Modal States
   const [deleteModal, setDeleteModal] = useState<{ show: boolean; id: number | null }>({ show: false, id: null });
   const [detailModal, setDetailModal] = useState<Transaction | null>(null);
   
   const [toast, setToast] = useState<ToastState>({ show: false, message: "", type: "success" });
+  
+  // FORM STATE (Updated with Date)
   const [formData, setFormData] = useState({ 
     title: "", 
     amount: "", 
     category: "", 
+    date: "", // BARU: State tanggal
     type: "expense" as "income" | "expense" 
   });
 
@@ -106,58 +107,59 @@ export default function HomePage() {
 
   // --- ACTIONS ---
   
-  // Fungsi Baru: Menyiapkan Form untuk Edit
   const handleEdit = (item: Transaction) => {
     setEditingId(item.id);
+    // Konversi ISO string ke format YYYY-MM-DD untuk input date HTML
+    const dateObj = new Date(item.date);
+    const dateString = dateObj.toISOString().split('T')[0];
+
     setFormData({
       title: item.title,
       amount: item.amount.toString(),
       category: item.category,
+      date: dateString, // Set tanggal lama
       type: item.type,
     });
     setIsDrawerOpen(true);
   };
 
-  // Fungsi Reset Form
   const resetForm = () => {
-    setFormData({ title: "", amount: "", category: "", type: "expense" });
+    // Default tanggal hari ini
+    const today = new Date().toISOString().split('T')[0];
+    setFormData({ title: "", amount: "", category: "", date: today, type: "expense" });
     setEditingId(null);
     setIsDrawerOpen(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.title || !formData.amount) return;
+    if (!formData.title || !formData.amount || !formData.date) return;
     
     setIsSubmitting(true);
     
+    // Gabungkan Tanggal yang dipilih dengan Jam saat ini agar urutan tidak berantakan
+    const now = new Date();
+    const selectedDate = new Date(formData.date);
+    selectedDate.setHours(now.getHours(), now.getMinutes(), now.getSeconds());
+
     const payload = {
       title: formData.title, 
       amount: Number(formData.amount), 
       type: formData.type, 
       category: formData.category || "Others", 
-      // Jika edit, jangan ubah tanggal. Jika baru, pakai tanggal sekarang.
-      ...(editingId ? {} : { date: new Date().toISOString() }),
+      date: selectedDate.toISOString(), // Gunakan tanggal inputan user
     };
 
     try {
       if (editingId) {
-        // UPDATE OPERATION
-        const { error } = await supabase
-          .from("transactions")
-          .update(payload)
-          .eq("id", editingId);
+        const { error } = await supabase.from("transactions").update(payload).eq("id", editingId);
         if (error) throw error;
         showToast("Transaction updated!", "success");
       } else {
-        // INSERT OPERATION
-        const { error } = await supabase
-          .from("transactions")
-          .insert([payload]);
+        const { error } = await supabase.from("transactions").insert([payload]);
         if (error) throw error;
         showToast("Transaction saved!", "success");
       }
-
       resetForm();
       fetchTransactions();
     } catch (error) { 
@@ -185,7 +187,7 @@ export default function HomePage() {
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, amount: e.target.value.replace(/\D/g, "") });
   const displayAmount = formData.amount ? new Intl.NumberFormat("id-ID").format(Number(formData.amount)) : "";
   const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
-  const formatFullDate = (dateString: string) => new Date(dateString).toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  const formatFullDate = (dateString: string) => new Date(dateString).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
   const formatTime = (dateString: string) => new Date(dateString).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
 
   return (
@@ -276,18 +278,16 @@ export default function HomePage() {
                     </p>
                     
                     <div className="flex items-center gap-1">
-                      {/* BUTTON EDIT */}
                       <button 
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleEdit(item); // Panggil fungsi Edit
+                          handleEdit(item);
                         }}
                         className="text-gray-300 hover:text-blue-500 hover:bg-blue-50 p-1.5 rounded-lg transition-colors"
                       >
                         <Pencil size={16} />
                       </button>
 
-                      {/* BUTTON DELETE */}
                       <button 
                         onClick={(e) => {
                           e.stopPropagation();
@@ -312,7 +312,7 @@ export default function HomePage() {
           </Link>
           <div className="relative -top-8">
             <button onClick={() => {
-              resetForm(); // Pastikan form bersih saat tombol (+) diklik
+              resetForm();
               setIsDrawerOpen(true);
             }} className="bg-blue-600 text-white h-14 w-14 rounded-full shadow-lg shadow-blue-600/40 flex items-center justify-center transform active:scale-95 transition-all hover:bg-blue-700">
               <Plus size={32} />
@@ -323,68 +323,38 @@ export default function HomePage() {
           </Link>
         </nav>
 
-        {/* --- POPUP DETAIL TRANSAKSI --- */}
+        {/* POPUP DETAIL */}
         {detailModal && (
           <div className="fixed inset-0 z-[70] flex items-center justify-center px-4 animate-in fade-in duration-200">
-            <div 
-              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-              onClick={() => setDetailModal(null)}
-            ></div>
-            
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setDetailModal(null)}></div>
             <div className="bg-white w-full max-w-xs p-6 rounded-3xl shadow-2xl relative z-10 flex flex-col items-center animate-in zoom-in-95 duration-200">
-              <div className={`p-4 rounded-full mb-4 ${
-                detailModal.type === 'income' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'
-              }`}>
+              <div className={`p-4 rounded-full mb-4 ${detailModal.type === 'income' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
                 {detailModal.type === 'income' ? <ArrowUpCircle size={32} /> : <Wallet size={32} />}
               </div>
-
-              <h3 className="text-gray-500 text-xs font-medium uppercase tracking-wide mb-1">
-                {detailModal.type === 'income' ? 'Income' : 'Expense'}
-              </h3>
-              <h2 className={`text-2xl font-bold mb-6 ${
-                detailModal.type === 'income' ? 'text-green-600' : 'text-red-600'
-              }`}>
-                {detailModal.type === 'expense' && '- '}
-                {formatCurrency(detailModal.amount)}
+              <h3 className="text-gray-500 text-xs font-medium uppercase tracking-wide mb-1">{detailModal.type === 'income' ? 'Income' : 'Expense'}</h3>
+              <h2 className={`text-2xl font-bold mb-6 ${detailModal.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
+                {detailModal.type === 'expense' && '- '}{formatCurrency(detailModal.amount)}
               </h2>
-
               <div className="w-full space-y-4 bg-gray-50 p-4 rounded-xl border border-gray-100">
                 <div className="flex justify-between items-start">
                   <span className="text-gray-400 text-xs font-medium">Title</span>
-                  <span className="text-gray-800 text-sm font-bold text-right max-w-[150px] break-words">
-                    {detailModal.title}
-                  </span>
+                  <span className="text-gray-800 text-sm font-bold text-right max-w-[150px] break-words">{detailModal.title}</span>
                 </div>
                 <div className="h-px bg-gray-200"></div>
                 <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-1.5 text-gray-400">
-                    <Tag size={14} />
-                    <span className="text-xs font-medium">Category</span>
-                  </div>
+                  <div className="flex items-center gap-1.5 text-gray-400"><Tag size={14} /><span className="text-xs font-medium">Category</span></div>
                   <span className="text-gray-800 text-sm font-semibold">{detailModal.category || '-'}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-1.5 text-gray-400">
-                    <Calendar size={14} />
-                    <span className="text-xs font-medium">Date</span>
-                  </div>
+                  <div className="flex items-center gap-1.5 text-gray-400"><Calendar size={14} /><span className="text-xs font-medium">Date</span></div>
                   <span className="text-gray-800 text-sm font-semibold">{formatFullDate(detailModal.date)}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-1.5 text-gray-400">
-                    <Clock size={14} />
-                    <span className="text-xs font-medium">Time</span>
-                  </div>
+                  <div className="flex items-center gap-1.5 text-gray-400"><Clock size={14} /><span className="text-xs font-medium">Time</span></div>
                   <span className="text-gray-800 text-sm font-semibold">{formatTime(detailModal.date)}</span>
                 </div>
               </div>
-
-              <button 
-                onClick={() => setDetailModal(null)}
-                className="mt-6 w-full bg-gray-100 text-gray-700 py-3 rounded-xl font-bold text-sm hover:bg-gray-200 transition-colors"
-              >
-                Close
-              </button>
+              <button onClick={() => setDetailModal(null)} className="mt-6 w-full bg-gray-100 text-gray-700 py-3 rounded-xl font-bold text-sm hover:bg-gray-200 transition-colors">Close</button>
             </div>
           </div>
         )}
@@ -413,16 +383,13 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* FORM DRAWER (ADD & EDIT) */}
+        {/* DRAWER FORM */}
         {isDrawerOpen && (
           <div className="absolute inset-0 z-[60] flex flex-col justify-end">
             <div className="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity" onClick={resetForm}></div>
             <div className="bg-white rounded-t-4xl p-6 relative z-10 animate-in slide-in-from-bottom duration-300">
               <div className="flex justify-between items-center mb-6">
-                {/* JUDUL DINAMIS: Add atau Edit */}
-                <h3 className="text-xl font-bold text-gray-800">
-                  {editingId ? "Edit Transaction" : "Add Transaction"}
-                </h3>
+                <h3 className="text-xl font-bold text-gray-800">{editingId ? "Edit Transaction" : "Add Transaction"}</h3>
                 <button onClick={resetForm} className="bg-gray-100 p-2 rounded-full text-gray-500"><X size={20} /></button>
               </div>
               <form onSubmit={handleSubmit} className="space-y-4">
@@ -438,6 +405,22 @@ export default function HomePage() {
                   <label className="block text-xs font-medium text-gray-500 mb-1">Amount</label>
                   <input type="text" inputMode="numeric" placeholder="0" className="w-full bg-gray-50 p-4 rounded-xl font-bold text-xl text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-100" value={displayAmount} onChange={handleAmountChange} required />
                 </div>
+                
+                {/* --- DATE PICKER INPUT --- */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Date</label>
+                  <div className="relative">
+                    <Calendar size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"/>
+                    <input 
+                      type="date" 
+                      className="w-full bg-gray-50 p-4 pl-10 rounded-xl font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-100 appearance-none"
+                      value={formData.date}
+                      onChange={(e) => setFormData({...formData, date: e.target.value})}
+                      required
+                    />
+                  </div>
+                </div>
+
                 <div>
                   <label className="block text-xs font-medium text-gray-500 mb-1">Category</label>
                   <div className="relative">
@@ -449,7 +432,6 @@ export default function HomePage() {
                   </div>
                 </div>
                 
-                {/* BUTTON DINAMIS */}
                 <button type="submit" disabled={isSubmitting} className="w-full bg-blue-600 text-white py-4 rounded-xl font-bold text-lg mt-4 shadow-lg shadow-blue-600/30 active:scale-95 transition-all disabled:opacity-50">
                   {isSubmitting ? "Saving..." : (editingId ? "Update Transaction" : "Save Transaction")}
                 </button>

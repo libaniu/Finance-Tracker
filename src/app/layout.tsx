@@ -1,30 +1,37 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
 
+// 1. KONFIGURASI METADATA & MANIFEST
 export const metadata: Metadata = {
-  title: "Myllet",
-  description: "Personal Finance Tracker",
+  title: "My Wallet",
+  description: "Simple Personal Finance Tracker",
+  manifest: "/manifest.json", // Link ke file manifest
+  icons: {
+    icon: "/icon-192x192.png", // Icon di tab browser
+    apple: "/icon-192x192.png", // Icon di iPhone
+  },
 };
 
-// Interface untuk props layout
-interface RootLayoutProps {
-  children: React.ReactNode;
-}
+// 2. KONFIGURASI VIEWPORT (Wajib untuk PWA di HP)
+export const viewport: Viewport = {
+  themeColor: "#2563eb", // Warna biru status bar HP (sesuai header)
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false, // Biar user gak bisa zoom-in/out sembarangan
+};
 
-export default function RootLayout({ children }: RootLayoutProps) {
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   return (
-    <html lang="id">
-      <body className={inter.className}>
-        {/* Wrapper agar tampilan di tengah seperti HP */}
-        <div className="flex justify-center min-h-screen bg-slate-100">
-          <div className="w-full max-w-md bg-white min-h-screen shadow-2xl relative overflow-hidden flex flex-col">
-            {children}
-          </div>
-        </div>
-      </body>
+    <html lang="en">
+      <body className={inter.className}>{children}</body>
     </html>
   );
 }
