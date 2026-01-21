@@ -105,7 +105,7 @@ export default function StatsPage() {
 
   return (
     <div className="bg-gray-100 min-h-screen flex justify-center">
-      <div className="fixed inset-0 w-full max-w-md bg-slate-50 h-dvh flex flex-col relative overflow-hidden shadow-2xl overscroll-none mx-auto">
+      <div className="fixed inset-0 w-full max-w-md bg-slate-50 h-dvh flex flex-col overflow-hidden shadow-2xl overscroll-none mx-auto">
         
         {/* HEADER */}
         <header className="flex-none bg-blue-600 px-6 pt-8 pb-6 rounded-b-4xl text-white shadow-md z-10">
