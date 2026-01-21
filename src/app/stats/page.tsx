@@ -105,10 +105,10 @@ export default function StatsPage() {
 
   return (
     <div className="bg-gray-100 min-h-screen flex justify-center">
-      <div className="fixed inset-0 w-full max-w-md bg-slate-50 h-[100dvh] flex flex-col relative overflow-hidden shadow-2xl overscroll-none mx-auto">
+      <div className="fixed inset-0 w-full max-w-md bg-slate-50 h-dvh flex flex-col relative overflow-hidden shadow-2xl overscroll-none mx-auto">
         
         {/* HEADER */}
-        <header className="flex-none bg-blue-600 px-6 pt-8 pb-6 rounded-b-[2rem] text-white shadow-md z-10">
+        <header className="flex-none bg-blue-600 px-6 pt-8 pb-6 rounded-b-4xl text-white shadow-md z-10">
           <div className="flex items-center gap-4 mb-4">
             <Link href="/" className="bg-white/20 p-2 rounded-full hover:bg-white/30 transition">
               <ArrowLeft size={24} />
