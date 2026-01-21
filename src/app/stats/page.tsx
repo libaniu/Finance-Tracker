@@ -9,7 +9,8 @@ import {
   Plus,
   ArrowLeft,
   Loader2,
-  Calendar, // Icon Calendar
+  Calendar,
+  Download,
 } from "lucide-react";
 import {
   PieChart,
@@ -24,6 +25,8 @@ import {
   YAxis,
   CartesianGrid,
 } from "recharts";
+// IMPORT LIBRARY BARU
+import * as XLSX from "xlsx";
 
 // --- TYPES ---
 interface Transaction {
@@ -41,8 +44,7 @@ export default function StatsPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
-  // --- BARU: STATE FILTER BULAN ---
-  // Default: Ambil bulan saat ini (Format: YYYY-MM, contoh: "2026-01")
+  // State Filter Bulan (Default: Bulan Ini)
   const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
 
   useEffect(() => {
@@ -61,12 +63,61 @@ export default function StatsPage() {
     }
   };
 
-  // --- LOGIC UTAMA: FILTER DATA BERDASARKAN BULAN ---
+  // --- LOGIC FILTER ---
   const filteredTransactions = transactions.filter((t) => 
     t.date.startsWith(selectedMonth)
   );
 
-  // --- LOGIC 1: SUMMARY (INCOME vs EXPENSE) ---
+  // --- LOGIC EXPORT EXCEL DENGAN AUTO-WIDTH (UPDATE) ---
+  const downloadExcel = () => {
+    if (filteredTransactions.length === 0) return;
+
+    // 1. Siapkan Data yang Rapi
+    const dataToExport = filteredTransactions.map(t => {
+      const dateObj = new Date(t.date);
+      return {
+        Date: dateObj.toLocaleDateString("en-GB"), // DD/MM/YYYY
+        Time: dateObj.toLocaleTimeString("en-GB", {hour: '2-digit', minute:'2-digit'}),
+        Title: t.title,
+        Category: t.category,
+        Type: t.type.toUpperCase(),
+        Amount: t.amount // Biarkan angka agar bisa dijumlah di Excel
+      };
+    });
+
+    // 2. Buat Worksheet
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+
+    // 3. LOGIC PENTING: Hitung Lebar Kolom Otomatis
+    // Kita cari teks terpanjang di setiap kolom (Header vs Isi Data)
+    const columnWidths = Object.keys(dataToExport[0]).map(key => {
+      // Hitung panjang header
+      let maxLength = key.length; 
+
+      // Bandingkan dengan panjang isi data di kolom tersebut
+      dataToExport.forEach((row: any) => {
+        const cellLength = (row[key] ? row[key].toString() : "").length;
+        if (cellLength > maxLength) {
+          maxLength = cellLength;
+        }
+      });
+
+      // Tambahkan sedikit padding (+2) agar tidak terlalu mepet
+      return { wch: maxLength + 5 }; 
+    });
+
+    // Terapkan lebar kolom ke worksheet
+    worksheet["!cols"] = columnWidths;
+
+    // 4. Buat Workbook dan Download
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Report");
+    
+    // Simpan file dengan ekstensi .xlsx
+    XLSX.writeFile(workbook, `Report_${selectedMonth}.xlsx`);
+  };
+
+  // --- LOGIC CHARTS ---
   const totalIncome = filteredTransactions.filter(t => t.type === 'income').reduce((acc, t) => acc + t.amount, 0);
   const totalExpense = filteredTransactions.filter(t => t.type === 'expense').reduce((acc, t) => acc + t.amount, 0);
   
@@ -75,7 +126,6 @@ export default function StatsPage() {
     { name: 'Expense', value: totalExpense },
   ];
 
-  // --- LOGIC 2: EXPENSE BY CATEGORY ---
   const expensesByCategory = filteredTransactions
     .filter((t) => t.type === "expense")
     .reduce((acc: any, curr) => {
@@ -89,7 +139,6 @@ export default function StatsPage() {
     .map((key) => ({ name: key, value: expensesByCategory[key] }))
     .sort((a, b) => b.value - a.value);
 
-  // --- LOGIC 3: INCOME BY CATEGORY ---
   const incomeByCategory = filteredTransactions
     .filter((t) => t.type === "income")
     .reduce((acc: any, curr) => {
@@ -109,14 +158,26 @@ export default function StatsPage() {
         
         {/* HEADER */}
         <header className="flex-none bg-blue-600 px-6 pt-8 pb-6 rounded-b-4xl text-white shadow-md z-10">
-          <div className="flex items-center gap-4 mb-4">
-            <Link href="/" className="bg-white/20 p-2 rounded-full hover:bg-white/30 transition">
-              <ArrowLeft size={24} />
-            </Link>
-            <h1 className="text-2xl font-bold">Statistics</h1>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-4">
+              <Link href="/" className="bg-white/20 p-2 rounded-full hover:bg-white/30 transition">
+                <ArrowLeft size={24} />
+              </Link>
+              <h1 className="text-2xl font-bold">Statistics</h1>
+            </div>
+            
+            {/* BUTTON DOWNLOAD */}
+            <button 
+              onClick={downloadExcel} // Panggil fungsi Excel baru
+              disabled={filteredTransactions.length === 0}
+              className="bg-white/20 p-2 rounded-full hover:bg-white/30 transition disabled:opacity-50"
+              title="Download Excel Report"
+            >
+              <Download size={24} />
+            </button>
           </div>
 
-          {/* --- BARU: FILTER INPUT --- */}
+          {/* FILTER INPUT */}
           <div className="bg-white/10 backdrop-blur-md p-2 rounded-xl flex items-center gap-3 border border-white/20">
             <div className="p-2 bg-white/20 rounded-lg text-white">
               <Calendar size={18} />
@@ -151,7 +212,6 @@ export default function StatsPage() {
               <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
                 <h3 className="font-bold text-gray-800 mb-1 text-center">Financial Overview</h3>
                 <p className="text-xs text-gray-400 text-center mb-4">
-                  {/* Format tanggal agar user tau dia lihat data bulan apa */}
                   {new Date(selectedMonth).toLocaleDateString("en-GB", { month: "long", year: "numeric" })}
                 </p>
                 <div className="h-56 w-full">
@@ -164,8 +224,8 @@ export default function StatsPage() {
                         paddingAngle={5}
                         dataKey="value"
                       >
-                        <Cell fill="#10b981" /> {/* Income */}
-                        <Cell fill="#ef4444" /> {/* Expense */}
+                        <Cell fill="#10b981" />
+                        <Cell fill="#ef4444" />
                       </Pie>
                       <Tooltip formatter={(value: any) => `Rp ${value.toLocaleString("id-ID")}`} />
                       <Legend verticalAlign="bottom" height={36} iconType="circle" />
