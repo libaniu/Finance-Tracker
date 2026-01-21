@@ -17,7 +17,6 @@ import {
   AlertTriangle,
   ArrowUpDown,
   Tag,
-  Calendar, // Import icon Calendar
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
@@ -46,20 +45,29 @@ const INCOME_CATEGORIES = [
 ];
 
 export default function HomePage() {
+  // --- STATE ---
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [totalBalance, setTotalBalance] = useState(0);
   const [income, setIncome] = useState(0);
   const [expense, setExpense] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
 
-  // UI States
+  // --- UI STATES ---
   const [sortBy, setSortBy] = useState("date-desc");
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [deleteModal, setDeleteModal] = useState<{ show: boolean; id: number | null }>({ show: false, id: null });
   const [toast, setToast] = useState<ToastState>({ show: false, message: "", type: "success" });
-  const [formData, setFormData] = useState({ title: "", amount: "", category: "", type: "expense" as "income" | "expense" });
+  
+  // --- FORM STATE ---
+  const [formData, setFormData] = useState({ 
+    title: "", 
+    amount: "", 
+    category: "", 
+    type: "expense" as "income" | "expense" 
+  });
 
+  // --- FETCH DATA ---
   useEffect(() => { fetchTransactions(); }, []);
 
   const fetchTransactions = async () => {
@@ -88,13 +96,18 @@ export default function HomePage() {
     }
   });
 
+  // --- ACTIONS ---
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.title || !formData.amount) return;
     setIsSubmitting(true);
     try {
       const { error } = await supabase.from("transactions").insert([{
-        title: formData.title, amount: Number(formData.amount), type: formData.type, category: formData.category || "Others", date: new Date().toISOString(),
+        title: formData.title, 
+        amount: Number(formData.amount), 
+        type: formData.type, 
+        category: formData.category || "Others", 
+        date: new Date().toISOString(),
       }]);
       if (error) throw error;
       setFormData({ title: "", amount: "", category: "", type: "expense" });
@@ -111,10 +124,10 @@ export default function HomePage() {
     } catch (error) { showToast("Failed to delete.", "error"); } finally { setDeleteModal({ show: false, id: null }); }
   };
 
+  // --- HELPERS ---
   const showToast = (message: string, type: "success" | "error") => {
     setToast({ show: true, message, type }); setTimeout(() => setToast(p => ({ ...p, show: false })), 3000);
   };
-
   const formatCurrency = (value: number) => new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(value);
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, amount: e.target.value.replace(/\D/g, "") });
   const displayAmount = formData.amount ? new Intl.NumberFormat("id-ID").format(Number(formData.amount)) : "";
@@ -122,7 +135,9 @@ export default function HomePage() {
 
   return (
     <div className="bg-gray-100 min-h-screen flex justify-center">
-      <div className="w-full max-w-md bg-slate-50 h-[100dvh] flex flex-col relative overflow-hidden shadow-2xl">
+      
+      {/* APP CONTAINER (FIXED & OVERSCROLL FIX) */}
+      <div className="fixed inset-0 w-full max-w-md bg-slate-50 h-[100dvh] flex flex-col relative overflow-hidden shadow-2xl overscroll-none mx-auto">
         
         {/* HEADER */}
         <header className="flex-none bg-blue-600 px-6 pt-8 pb-10 rounded-b-[2.5rem] text-white relative z-10 shadow-md">
@@ -152,8 +167,8 @@ export default function HomePage() {
           </div>
         </header>
 
-        {/* LIST TRANSAKSI (LAYOUT BARU) */}
-        <main className="flex-1 px-6 pt-6 pb-6 overflow-y-auto">
+        {/* MAIN CONTENT (SCROLLABLE) */}
+        <main className="flex-1 px-6 pt-6 pb-6 overflow-y-auto overscroll-y-auto scroll-smooth">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-lg font-bold text-gray-800">Recent Transactions</h2>
             <div className="relative">
@@ -169,34 +184,33 @@ export default function HomePage() {
           ) : transactions.length === 0 ? (
             <div className="text-center py-10 text-gray-400 text-sm">No transactions yet.</div>
           ) : (
-            <div className="space-y-3 pb-4"> {/* Space antar kartu diperkecil sedikit */}
+            <div className="space-y-3 pb-4">
               {sortedTransactions.map((item) => (
                 <div key={item.id} className="relative flex items-center justify-between bg-white p-4 rounded-2xl border border-gray-50 shadow-sm hover:shadow-md transition-all group">
                   
-                  {/* Bagian Kiri: Icon + Text */}
+                  {/* LEFT: ICON + INFO (TRUNCATED) */}
                   <div className="flex items-center gap-4 flex-1 min-w-0 pr-2">
-                    {/* Icon Circle */}
                     <div className={`w-12 h-12 flex items-center justify-center rounded-full flex-shrink-0 ${
                       item.type === 'income' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'
                     }`}>
                       {item.type === 'income' ? <ArrowUpCircle size={24} /> : <Wallet size={24} />}
                     </div>
                     
-                    {/* Text Info (Clean Layout) */}
                     <div className="flex flex-col min-w-0">
                       <h3 className="font-bold text-gray-900 text-sm truncate leading-tight mb-1">
                         {item.title}
                       </h3>
                       <div className="flex items-center gap-1.5 text-xs text-gray-400">
-                        {/* Kategori & Tanggal digabung biar rapi */}
-                        <span className="truncate max-w-[120px]">{item.category || 'Others'}</span>
-                        <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
+                        <span className="truncate max-w-[100px] font-medium text-gray-500">
+                            {item.category || 'Others'}
+                        </span>
+                        <span className="w-1 h-1 bg-gray-300 rounded-full flex-shrink-0"></span>
                         <span className="whitespace-nowrap">{formatDate(item.date)}</span>
                       </div>
                     </div>
                   </div>
 
-                  {/* Bagian Kanan: Nominal + Delete */}
+                  {/* RIGHT: AMOUNT + DELETE */}
                   <div className="flex flex-col items-end gap-1 flex-shrink-0">
                     <p className={`font-bold text-sm whitespace-nowrap ${
                       item.type === 'income' ? 'text-green-600' : 'text-gray-900'
@@ -204,8 +218,6 @@ export default function HomePage() {
                       {item.type === 'expense' && '- '}
                       {formatCurrency(item.amount)}
                     </p>
-                    
-                    {/* Tombol Hapus (Kecil & Subtle) */}
                     <button 
                       onClick={() => setDeleteModal({ show: true, id: item.id })}
                       className="text-gray-300 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-lg transition-colors"
@@ -235,7 +247,7 @@ export default function HomePage() {
           </Link>
         </nav>
 
-        {/* OVERLAYS (TOAST & MODAL) */}
+        {/* OVERLAYS */}
         <div className={`fixed top-4 left-1/2 transform -translate-x-1/2 z-[60] transition-all duration-300 ${toast.show ? "translate-y-0 opacity-100" : "-translate-y-10 opacity-0 pointer-events-none"}`}>
           <div className={`flex items-center gap-2 px-4 py-3 rounded-full shadow-xl ${toast.type === "success" ? "bg-black text-white" : "bg-red-500 text-white"}`}>
             {toast.type === "success" ? <CheckCircle size={18} /> : <AlertCircle size={18} />} <span className="text-sm font-medium">{toast.message}</span>
@@ -258,7 +270,6 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* DRAWER FORM */}
         {isDrawerOpen && (
           <div className="absolute inset-0 z-50 flex flex-col justify-end">
             <div className="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity" onClick={() => setIsDrawerOpen(false)}></div>

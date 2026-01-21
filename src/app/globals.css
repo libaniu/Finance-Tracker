@@ -3,3 +3,18 @@
 body {
   background-color: #f1f5f9; /* Slate 100 - Background Desktop */
 }
+
+html,
+body {
+  height: 100%;
+  width: 100%;
+  overflow: hidden; /* Mencegah scroll pada body utama */
+  overscroll-behavior: none; /* Mematikan efek membal/bounce di iOS */
+  touch-action: pan-x pan-y;
+}
+
+/* Opsional: Biar scrollbar di Chrome/Android tidak merusak pemandangan */
+::-webkit-scrollbar {
+  width: 0px;
+  background: transparent;
+}
