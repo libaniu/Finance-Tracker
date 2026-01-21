@@ -17,6 +17,9 @@ import {
   AlertTriangle,
   ArrowUpDown,
   Tag,
+  Calendar,
+  Clock,
+  Pencil, // ICON BARU
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
@@ -56,10 +59,15 @@ export default function HomePage() {
   const [sortBy, setSortBy] = useState("date-desc");
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [deleteModal, setDeleteModal] = useState<{ show: boolean; id: number | null }>({ show: false, id: null });
-  const [toast, setToast] = useState<ToastState>({ show: false, message: "", type: "success" });
   
-  // --- FORM STATE ---
+  // EDIT STATE (BARU)
+  const [editingId, setEditingId] = useState<number | null>(null); // Menyimpan ID yang sedang diedit
+
+  // Modal States
+  const [deleteModal, setDeleteModal] = useState<{ show: boolean; id: number | null }>({ show: false, id: null });
+  const [detailModal, setDetailModal] = useState<Transaction | null>(null);
+  
+  const [toast, setToast] = useState<ToastState>({ show: false, message: "", type: "success" });
   const [formData, setFormData] = useState({ 
     title: "", 
     amount: "", 
@@ -97,22 +105,67 @@ export default function HomePage() {
   });
 
   // --- ACTIONS ---
+  
+  // Fungsi Baru: Menyiapkan Form untuk Edit
+  const handleEdit = (item: Transaction) => {
+    setEditingId(item.id);
+    setFormData({
+      title: item.title,
+      amount: item.amount.toString(),
+      category: item.category,
+      type: item.type,
+    });
+    setIsDrawerOpen(true);
+  };
+
+  // Fungsi Reset Form
+  const resetForm = () => {
+    setFormData({ title: "", amount: "", category: "", type: "expense" });
+    setEditingId(null);
+    setIsDrawerOpen(false);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.title || !formData.amount) return;
+    
     setIsSubmitting(true);
+    
+    const payload = {
+      title: formData.title, 
+      amount: Number(formData.amount), 
+      type: formData.type, 
+      category: formData.category || "Others", 
+      // Jika edit, jangan ubah tanggal. Jika baru, pakai tanggal sekarang.
+      ...(editingId ? {} : { date: new Date().toISOString() }),
+    };
+
     try {
-      const { error } = await supabase.from("transactions").insert([{
-        title: formData.title, 
-        amount: Number(formData.amount), 
-        type: formData.type, 
-        category: formData.category || "Others", 
-        date: new Date().toISOString(),
-      }]);
-      if (error) throw error;
-      setFormData({ title: "", amount: "", category: "", type: "expense" });
-      setIsDrawerOpen(false); fetchTransactions(); showToast("Transaction saved!", "success");
-    } catch (error) { showToast("Failed to save.", "error"); } finally { setIsSubmitting(false); }
+      if (editingId) {
+        // UPDATE OPERATION
+        const { error } = await supabase
+          .from("transactions")
+          .update(payload)
+          .eq("id", editingId);
+        if (error) throw error;
+        showToast("Transaction updated!", "success");
+      } else {
+        // INSERT OPERATION
+        const { error } = await supabase
+          .from("transactions")
+          .insert([payload]);
+        if (error) throw error;
+        showToast("Transaction saved!", "success");
+      }
+
+      resetForm();
+      fetchTransactions();
+    } catch (error) { 
+      console.error(error);
+      showToast("Failed to save.", "error"); 
+    } finally { 
+      setIsSubmitting(false); 
+    }
   };
 
   const executeDelete = async () => {
@@ -132,11 +185,13 @@ export default function HomePage() {
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, amount: e.target.value.replace(/\D/g, "") });
   const displayAmount = formData.amount ? new Intl.NumberFormat("id-ID").format(Number(formData.amount)) : "";
   const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+  const formatFullDate = (dateString: string) => new Date(dateString).toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  const formatTime = (dateString: string) => new Date(dateString).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
 
   return (
     <div className="bg-gray-100 min-h-screen flex justify-center">
       
-      {/* APP CONTAINER (FIXED & OVERSCROLL FIX) */}
+      {/* APP CONTAINER */}
       <div className="fixed inset-0 w-full max-w-md bg-slate-50 h-[100dvh] flex flex-col relative overflow-hidden shadow-2xl overscroll-none mx-auto">
         
         {/* HEADER */}
@@ -167,7 +222,7 @@ export default function HomePage() {
           </div>
         </header>
 
-        {/* MAIN CONTENT (SCROLLABLE) */}
+        {/* MAIN CONTENT */}
         <main className="flex-1 px-6 pt-6 pb-6 overflow-y-auto overscroll-y-auto scroll-smooth">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-lg font-bold text-gray-800">Recent Transactions</h2>
@@ -186,9 +241,11 @@ export default function HomePage() {
           ) : (
             <div className="space-y-3 pb-4">
               {sortedTransactions.map((item) => (
-                <div key={item.id} className="relative flex items-center justify-between bg-white p-4 rounded-2xl border border-gray-50 shadow-sm hover:shadow-md transition-all group">
-                  
-                  {/* LEFT: ICON + INFO (TRUNCATED) */}
+                <div 
+                  key={item.id} 
+                  onClick={() => setDetailModal(item)}
+                  className="relative flex items-center justify-between bg-white p-4 rounded-2xl border border-gray-50 shadow-sm hover:shadow-md transition-all group active:scale-[0.98] cursor-pointer"
+                >
                   <div className="flex items-center gap-4 flex-1 min-w-0 pr-2">
                     <div className={`w-12 h-12 flex items-center justify-center rounded-full flex-shrink-0 ${
                       item.type === 'income' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'
@@ -210,7 +267,6 @@ export default function HomePage() {
                     </div>
                   </div>
 
-                  {/* RIGHT: AMOUNT + DELETE */}
                   <div className="flex flex-col items-end gap-1 flex-shrink-0">
                     <p className={`font-bold text-sm whitespace-nowrap ${
                       item.type === 'income' ? 'text-green-600' : 'text-gray-900'
@@ -218,14 +274,31 @@ export default function HomePage() {
                       {item.type === 'expense' && '- '}
                       {formatCurrency(item.amount)}
                     </p>
-                    <button 
-                      onClick={() => setDeleteModal({ show: true, id: item.id })}
-                      className="text-gray-300 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-lg transition-colors"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
+                    
+                    <div className="flex items-center gap-1">
+                      {/* BUTTON EDIT */}
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEdit(item); // Panggil fungsi Edit
+                        }}
+                        className="text-gray-300 hover:text-blue-500 hover:bg-blue-50 p-1.5 rounded-lg transition-colors"
+                      >
+                        <Pencil size={16} />
+                      </button>
 
+                      {/* BUTTON DELETE */}
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setDeleteModal({ show: true, id: item.id });
+                        }}
+                        className="text-gray-300 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-lg transition-colors"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>
@@ -238,7 +311,10 @@ export default function HomePage() {
             <Home size={24} /> <span className="text-[10px] font-medium mt-1">Home</span>
           </Link>
           <div className="relative -top-8">
-            <button onClick={() => setIsDrawerOpen(true)} className="bg-blue-600 text-white h-14 w-14 rounded-full shadow-lg shadow-blue-600/40 flex items-center justify-center transform active:scale-95 transition-all hover:bg-blue-700">
+            <button onClick={() => {
+              resetForm(); // Pastikan form bersih saat tombol (+) diklik
+              setIsDrawerOpen(true);
+            }} className="bg-blue-600 text-white h-14 w-14 rounded-full shadow-lg shadow-blue-600/40 flex items-center justify-center transform active:scale-95 transition-all hover:bg-blue-700">
               <Plus size={32} />
             </button>
           </div>
@@ -247,16 +323,76 @@ export default function HomePage() {
           </Link>
         </nav>
 
-        {/* OVERLAYS */}
-        <div className={`fixed top-4 left-1/2 transform -translate-x-1/2 z-[60] transition-all duration-300 ${toast.show ? "translate-y-0 opacity-100" : "-translate-y-10 opacity-0 pointer-events-none"}`}>
-          <div className={`flex items-center gap-2 px-4 py-3 rounded-full shadow-xl ${toast.type === "success" ? "bg-black text-white" : "bg-red-500 text-white"}`}>
-            {toast.type === "success" ? <CheckCircle size={18} /> : <AlertCircle size={18} />} <span className="text-sm font-medium">{toast.message}</span>
-          </div>
-        </div>
+        {/* --- POPUP DETAIL TRANSAKSI --- */}
+        {detailModal && (
+          <div className="fixed inset-0 z-[70] flex items-center justify-center px-4 animate-in fade-in duration-200">
+            <div 
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+              onClick={() => setDetailModal(null)}
+            ></div>
+            
+            <div className="bg-white w-full max-w-xs p-6 rounded-3xl shadow-2xl relative z-10 flex flex-col items-center animate-in zoom-in-95 duration-200">
+              <div className={`p-4 rounded-full mb-4 ${
+                detailModal.type === 'income' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'
+              }`}>
+                {detailModal.type === 'income' ? <ArrowUpCircle size={32} /> : <Wallet size={32} />}
+              </div>
 
+              <h3 className="text-gray-500 text-xs font-medium uppercase tracking-wide mb-1">
+                {detailModal.type === 'income' ? 'Income' : 'Expense'}
+              </h3>
+              <h2 className={`text-2xl font-bold mb-6 ${
+                detailModal.type === 'income' ? 'text-green-600' : 'text-red-600'
+              }`}>
+                {detailModal.type === 'expense' && '- '}
+                {formatCurrency(detailModal.amount)}
+              </h2>
+
+              <div className="w-full space-y-4 bg-gray-50 p-4 rounded-xl border border-gray-100">
+                <div className="flex justify-between items-start">
+                  <span className="text-gray-400 text-xs font-medium">Title</span>
+                  <span className="text-gray-800 text-sm font-bold text-right max-w-[150px] break-words">
+                    {detailModal.title}
+                  </span>
+                </div>
+                <div className="h-px bg-gray-200"></div>
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-1.5 text-gray-400">
+                    <Tag size={14} />
+                    <span className="text-xs font-medium">Category</span>
+                  </div>
+                  <span className="text-gray-800 text-sm font-semibold">{detailModal.category || '-'}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-1.5 text-gray-400">
+                    <Calendar size={14} />
+                    <span className="text-xs font-medium">Date</span>
+                  </div>
+                  <span className="text-gray-800 text-sm font-semibold">{formatFullDate(detailModal.date)}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-1.5 text-gray-400">
+                    <Clock size={14} />
+                    <span className="text-xs font-medium">Time</span>
+                  </div>
+                  <span className="text-gray-800 text-sm font-semibold">{formatTime(detailModal.date)}</span>
+                </div>
+              </div>
+
+              <button 
+                onClick={() => setDetailModal(null)}
+                className="mt-6 w-full bg-gray-100 text-gray-700 py-3 rounded-xl font-bold text-sm hover:bg-gray-200 transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* DELETE MODAL */}
         {deleteModal.show && (
-          <div className="absolute inset-0 z-50 flex items-center justify-center px-4">
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity" onClick={() => setDeleteModal({ show: false, id: null })}></div>
+          <div className="absolute inset-0 z-[80] flex items-center justify-center px-4">
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setDeleteModal({ show: false, id: null })}></div>
             <div className="bg-white w-full max-w-xs p-6 rounded-2xl shadow-2xl relative z-10 animate-in zoom-in-95 duration-200">
               <div className="flex flex-col items-center text-center">
                 <div className="bg-red-100 p-3 rounded-full text-red-600 mb-4"><AlertTriangle size={32} /></div>
@@ -270,18 +406,29 @@ export default function HomePage() {
           </div>
         )}
 
+        {/* TOAST */}
+        <div className={`fixed top-4 left-1/2 transform -translate-x-1/2 z-[90] transition-all duration-300 ${toast.show ? "translate-y-0 opacity-100" : "-translate-y-10 opacity-0 pointer-events-none"}`}>
+          <div className={`flex items-center gap-2 px-4 py-3 rounded-full shadow-xl ${toast.type === "success" ? "bg-black text-white" : "bg-red-500 text-white"}`}>
+            {toast.type === "success" ? <CheckCircle size={18} /> : <AlertCircle size={18} />} <span className="text-sm font-medium">{toast.message}</span>
+          </div>
+        </div>
+
+        {/* FORM DRAWER (ADD & EDIT) */}
         {isDrawerOpen && (
-          <div className="absolute inset-0 z-50 flex flex-col justify-end">
-            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity" onClick={() => setIsDrawerOpen(false)}></div>
+          <div className="absolute inset-0 z-[60] flex flex-col justify-end">
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity" onClick={resetForm}></div>
             <div className="bg-white rounded-t-4xl p-6 relative z-10 animate-in slide-in-from-bottom duration-300">
               <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xl font-bold text-gray-800">Add Transaction</h3>
-                <button onClick={() => setIsDrawerOpen(false)} className="bg-gray-100 p-2 rounded-full text-gray-500"><X size={20} /></button>
+                {/* JUDUL DINAMIS: Add atau Edit */}
+                <h3 className="text-xl font-bold text-gray-800">
+                  {editingId ? "Edit Transaction" : "Add Transaction"}
+                </h3>
+                <button onClick={resetForm} className="bg-gray-100 p-2 rounded-full text-gray-500"><X size={20} /></button>
               </div>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-2 gap-3 mb-4">
-                  <button type="button" onClick={() => setFormData({ ...formData, type: "expense", category: "" })} className={`p-3 rounded-xl font-medium text-sm transition-all ${formData.type === "expense" ? "bg-red-100 text-red-600 border-2 border-red-200" : "bg-gray-50 text-gray-400"}`}>Expense</button>
-                  <button type="button" onClick={() => setFormData({ ...formData, type: "income", category: "" })} className={`p-3 rounded-xl font-medium text-sm transition-all ${formData.type === "income" ? "bg-green-100 text-green-600 border-2 border-green-200" : "bg-gray-50 text-gray-400"}`}>Income</button>
+                  <button type="button" onClick={() => setFormData({ ...formData, type: "expense" })} className={`p-3 rounded-xl font-medium text-sm transition-all ${formData.type === "expense" ? "bg-red-100 text-red-600 border-2 border-red-200" : "bg-gray-50 text-gray-400"}`}>Expense</button>
+                  <button type="button" onClick={() => setFormData({ ...formData, type: "income" })} className={`p-3 rounded-xl font-medium text-sm transition-all ${formData.type === "income" ? "bg-green-100 text-green-600 border-2 border-green-200" : "bg-gray-50 text-gray-400"}`}>Income</button>
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-500 mb-1">Title</label>
@@ -301,7 +448,11 @@ export default function HomePage() {
                     </select>
                   </div>
                 </div>
-                <button type="submit" disabled={isSubmitting} className="w-full bg-blue-600 text-white py-4 rounded-xl font-bold text-lg mt-4 shadow-lg shadow-blue-600/30 active:scale-95 transition-all disabled:opacity-50">{isSubmitting ? "Saving..." : "Save Transaction"}</button>
+                
+                {/* BUTTON DINAMIS */}
+                <button type="submit" disabled={isSubmitting} className="w-full bg-blue-600 text-white py-4 rounded-xl font-bold text-lg mt-4 shadow-lg shadow-blue-600/30 active:scale-95 transition-all disabled:opacity-50">
+                  {isSubmitting ? "Saving..." : (editingId ? "Update Transaction" : "Save Transaction")}
+                </button>
               </form>
             </div>
           </div>

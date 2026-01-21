@@ -30,8 +30,12 @@ interface Transaction {
   title: string;
   amount: number;
   type: "income" | "expense";
+  category: string;
   date: string;
 }
+
+// Warna Palet untuk Kategori (Biar chart warna-warni)
+const CATEGORY_COLORS = ["#3b82f6", "#ef4444", "#10b981", "#f59e0b", "#8b5cf6", "#ec4899", "#6366f1"];
 
 export default function StatsPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -57,38 +61,48 @@ export default function StatsPage() {
     }
   };
 
-  // --- LOGIC 1: PIE CHART (Income vs Expense) ---
-  const incomeTotal = transactions
-    .filter((t) => t.type === "income")
-    .reduce((acc, curr) => acc + curr.amount, 0);
-
-  const expenseTotal = transactions
+  // --- LOGIC 1: EXPENSE BY CATEGORY (Grouped for Pie Chart) ---
+  // Mengelompokkan transaksi expense berdasarkan nama kategorinya
+  const expensesByCategory = transactions
     .filter((t) => t.type === "expense")
-    .reduce((acc, curr) => acc + curr.amount, 0);
+    .reduce((acc: any, curr) => {
+      const cat = curr.category || "Others"; // Default category
+      if (!acc[cat]) acc[cat] = 0;
+      acc[cat] += curr.amount;
+      return acc;
+    }, {});
 
-  const pieData = [
-    { name: "Income", value: incomeTotal || 0 },
-    { name: "Expense", value: expenseTotal || 0 },
-  ];
+  // Format data untuk Recharts
+  const expenseChartData = Object.keys(expensesByCategory)
+    .map((key) => ({
+      name: key,
+      value: expensesByCategory[key],
+    }))
+    .sort((a, b) => b.value - a.value); // Urutkan dari yang terbesar
 
-  // --- LOGIC 2: BAR CHART (Top 5 Expenses) ---
-  const topExpenses = transactions
-    .filter((t) => t.type === "expense")
-    .sort((a, b) => b.amount - a.amount)
-    .slice(0, 5);
-
-  // --- LOGIC 3: BAR CHART (Top 5 Incomes) ---
-  const topIncomes = transactions
+  // --- LOGIC 2: INCOME BY CATEGORY (Grouped for Bar Chart) ---
+  const incomeByCategory = transactions
     .filter((t) => t.type === "income")
-    .sort((a, b) => b.amount - a.amount)
-    .slice(0, 5);
+    .reduce((acc: any, curr) => {
+      const cat = curr.category || "Others";
+      if (!acc[cat]) acc[cat] = 0;
+      acc[cat] += curr.amount;
+      return acc;
+    }, {});
+
+  const incomeChartData = Object.keys(incomeByCategory)
+    .map((key) => ({
+      name: key,
+      value: incomeByCategory[key],
+    }))
+    .sort((a, b) => b.value - a.value);
 
   return (
-    // 1. OUTER WRAPPER (Desktop Background)
+    // 1. OUTER WRAPPER (Sama seperti Home)
     <div className="bg-gray-100 min-h-screen flex justify-center">
       
-      {/* 2. MOBILE CONTAINER (Layout Flexbox) */}
-      <div className="w-full max-w-md bg-slate-50 h-[100dvh] flex flex-col relative overflow-hidden shadow-2xl">
+      {/* 2. MOBILE CONTAINER (Fixed & Overscroll Fix) */}
+      <div className="fixed inset-0 w-full max-w-md bg-slate-50 h-[100dvh] flex flex-col relative overflow-hidden shadow-2xl overscroll-none mx-auto">
         
         {/* HEADER */}
         <header className="flex-none bg-blue-600 px-6 pt-8 pb-6 rounded-b-[2rem] text-white shadow-md z-10">
@@ -101,7 +115,7 @@ export default function StatsPage() {
         </header>
 
         {/* MAIN CONTENT (Scrollable) */}
-        <main className="flex-1 px-6 pt-6 pb-6 overflow-y-auto">
+        <main className="flex-1 px-6 pt-6 pb-6 overflow-y-auto overscroll-y-auto scroll-smooth">
           {isLoading ? (
             <div className="flex justify-center py-20">
               <Loader2 className="animate-spin text-blue-600" size={32} />
@@ -113,14 +127,14 @@ export default function StatsPage() {
           ) : (
             <div className="space-y-6 pb-4">
               
-              {/* CHART 1: PIE CHART */}
+              {/* CHART 1: EXPENSE PIE CHART (Porsi Pengeluaran) */}
               <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-                <h3 className="font-bold text-gray-700 mb-4 text-center">Financial Summary</h3>
+                <h3 className="font-bold text-gray-700 mb-4 text-center">Expenses by Category</h3>
                 <div className="h-64 w-full">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
-                        data={pieData}
+                        data={expenseChartData}
                         cx="50%"
                         cy="50%"
                         innerRadius={60}
@@ -128,75 +142,80 @@ export default function StatsPage() {
                         paddingAngle={5}
                         dataKey="value"
                       >
-                        <Cell fill="#10b981" /> {/* Green */}
-                        <Cell fill="#ef4444" /> {/* Red */}
+                        {expenseChartData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={CATEGORY_COLORS[index % CATEGORY_COLORS.length]} />
+                        ))}
                       </Pie>
                       <Tooltip formatter={(value: any) => `Rp ${value.toLocaleString("id-ID")}`} />
-                      <Legend verticalAlign="bottom" height={36} />
+                      <Legend verticalAlign="bottom" height={36} iconType="circle" />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
               </div>
 
-              {/* CHART 2: TOP 5 EXPENSES */}
-              <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-                <h3 className="font-bold text-gray-700 mb-2 text-center">Top 5 Expenses</h3>
-                <div className="h-64 w-full text-xs">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={topExpenses} layout="vertical" margin={{ left: 0, right: 20 }}>
-                      <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-                      <XAxis type="number" hide />
-                      <YAxis 
-                        dataKey="title" 
-                        type="category" 
-                        width={110} 
-                        tick={{fontSize: 10}}
-                      />
-                      <Tooltip 
-                        cursor={{fill: 'transparent'}}
-                        formatter={(value: any) => `Rp ${value.toLocaleString("id-ID")}`}
-                      />
-                      <Bar 
-                        dataKey="amount" 
-                        fill="#ef4444" // RED
-                        radius={[0, 4, 4, 0]} 
-                        barSize={20}
-                        minPointSize={10} 
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
+              {/* CHART 2: EXPENSE BAR CHART (Detail Kategori) */}
+              {expenseChartData.length > 0 && (
+                <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+                  <h3 className="font-bold text-gray-700 mb-2 text-center">Expense Breakdown</h3>
+                  <div className="h-64 w-full text-xs">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={expenseChartData} layout="vertical" margin={{ left: 0, right: 20 }}>
+                        <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                        <XAxis type="number" hide />
+                        <YAxis 
+                          dataKey="name" 
+                          type="category" 
+                          width={100} 
+                          tick={{fontSize: 10}}
+                        />
+                        <Tooltip 
+                          cursor={{fill: 'transparent'}}
+                          formatter={(value: any) => `Rp ${value.toLocaleString("id-ID")}`}
+                        />
+                        <Bar 
+                          dataKey="value" 
+                          fill="#ef4444" 
+                          radius={[0, 4, 4, 0]} 
+                          barSize={20}
+                          minPointSize={10} 
+                        />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
                 </div>
-              </div>
+              )}
 
-              {/* CHART 3: TOP 5 INCOMES */}
-              <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-                <h3 className="font-bold text-gray-700 mb-2 text-center">Top 5 Incomes</h3>
-                <div className="h-64 w-full text-xs">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={topIncomes} layout="vertical" margin={{ left: 0, right: 20 }}>
-                      <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-                      <XAxis type="number" hide />
-                      <YAxis 
-                        dataKey="title" 
-                        type="category" 
-                        width={110} 
-                        tick={{fontSize: 10}}
-                      />
-                      <Tooltip 
-                        cursor={{fill: 'transparent'}}
-                        formatter={(value: any) => `Rp ${value.toLocaleString("id-ID")}`}
-                      />
-                      <Bar 
-                        dataKey="amount" 
-                        fill="#10b981" // GREEN
-                        radius={[0, 4, 4, 0]} 
-                        barSize={20}
-                        minPointSize={10} 
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
+               {/* CHART 3: INCOME BAR CHART (Detail Pemasukan) */}
+               {incomeChartData.length > 0 && (
+                <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+                  <h3 className="font-bold text-gray-700 mb-2 text-center">Income Breakdown</h3>
+                  <div className="h-64 w-full text-xs">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={incomeChartData} layout="vertical" margin={{ left: 0, right: 20 }}>
+                        <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                        <XAxis type="number" hide />
+                        <YAxis 
+                          dataKey="name" 
+                          type="category" 
+                          width={100} 
+                          tick={{fontSize: 10}}
+                        />
+                        <Tooltip 
+                          cursor={{fill: 'transparent'}}
+                          formatter={(value: any) => `Rp ${value.toLocaleString("id-ID")}`}
+                        />
+                        <Bar 
+                          dataKey="value" 
+                          fill="#10b981" 
+                          radius={[0, 4, 4, 0]} 
+                          barSize={20}
+                          minPointSize={10} 
+                        />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
                 </div>
-              </div>
+               )}
 
             </div>
           )}
@@ -209,7 +228,6 @@ export default function StatsPage() {
             <span className="text-[10px] font-medium mt-1">Home</span>
           </Link>
 
-          {/* Disabled Plus Button */}
           <div className="relative -top-8 opacity-20 cursor-not-allowed">
             <div className="bg-gray-400 text-white h-14 w-14 rounded-full flex items-center justify-center">
               <Plus size={32} />
