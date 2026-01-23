@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import ReactMarkdown from "react-markdown"; // <-- INI YANG BIKIN TEKS RAPI
+import ReactMarkdown from "react-markdown";
 import {
   PieChart,
   Plus,
@@ -159,7 +159,7 @@ export default function HomePage() {
         setAiAdvice(data.advice);
         setIsAiModalOpen(true);
       } else {
-        showToast(data.advice || "AI sedang sibuk.", "error"); // Tampilkan pesan fallback
+        showToast(data.advice || "AI sedang sibuk.", "error");
       }
     } catch (error) {
       showToast("Gagal menghubungi AI.", "error");
@@ -168,8 +168,23 @@ export default function HomePage() {
     }
   };
 
+  // --- FORMATTERS ---
+  const formatCurrency = (value: number) =>
+    new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
+      minimumFractionDigits: 0,
+    }).format(value);
+
+  // --- BUDGET LOGIC ---
   const saveBudget = () => {
     const value = Number(tempBudget.replace(/\D/g, ""));
+
+    if (value > income) {
+      showToast(`Budget melebihi Income (${formatCurrency(income)})`, "error");
+      return;
+    }
+
     setMonthlyBudget(value);
     localStorage.setItem("monthlyBudget", value.toString());
     setIsBudgetModalOpen(false);
@@ -178,7 +193,7 @@ export default function HomePage() {
 
   const budgetPercentage =
     monthlyBudget > 0 ? Math.min((expense / monthlyBudget) * 100, 100) : 0;
-  let progressColor = "bg-blue-500";
+  let progressColor = "bg-sky-700";
   if (budgetPercentage > 50) progressColor = "bg-yellow-500";
   if (budgetPercentage > 85) progressColor = "bg-red-500";
 
@@ -290,12 +305,7 @@ export default function HomePage() {
     setToast({ show: true, message, type });
     setTimeout(() => setToast((p) => ({ ...p, show: false })), 3000);
   };
-  const formatCurrency = (value: number) =>
-    new Intl.NumberFormat("id-ID", {
-      style: "currency",
-      currency: "IDR",
-      minimumFractionDigits: 0,
-    }).format(value);
+
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) =>
     setFormData({ ...formData, amount: e.target.value.replace(/\D/g, "") });
   const displayAmount = formData.amount
@@ -322,10 +332,10 @@ export default function HomePage() {
     <div className="bg-gray-100 min-h-screen flex justify-center">
       <div className="fixed inset-0 w-full max-w-md bg-slate-50 h-dvh flex flex-col overflow-hidden shadow-2xl overscroll-none mx-auto">
         {/* HEADER */}
-        <header className="flex-none bg-blue-600 px-6 pt-8 pb-10 rounded-b-[2.5rem] text-white relative z-10 shadow-md">
+        <header className="flex-none bg-sky-700 px-6 pt-8 pb-10 rounded-b-[2.5rem] text-white relative z-10 shadow-md">
           <div className="flex justify-between items-center mb-6">
             <div>
-              <p className="text-blue-100 text-sm mb-1">Total Balance</p>
+              <p className="text-sky-100 text-sm mb-1">Total Balance</p>
               <h1 className="text-3xl font-bold">
                 {isLoading ? "..." : formatCurrency(totalBalance)}
               </h1>
@@ -344,7 +354,7 @@ export default function HomePage() {
                   <Bot size={20} />
                 )}
                 {!isAnalyzing && (
-                  <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-green-400 rounded-full animate-pulse border-2 border-blue-600"></span>
+                  <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-green-400 rounded-full animate-pulse border-2 border-sky-700"></span>
                 )}
               </button>
 
@@ -421,7 +431,7 @@ export default function HomePage() {
               <input
                 type="text"
                 placeholder="Search transaction..."
-                className="w-full bg-white border border-gray-100 pl-10 pr-4 py-3 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-100 shadow-sm placeholder:text-gray-300"
+                className="w-full bg-white border border-gray-100 pl-10 pr-4 py-3 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-sky-100 shadow-sm placeholder:text-gray-300"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -440,7 +450,7 @@ export default function HomePage() {
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="appearance-none bg-white border border-gray-200 text-gray-600 text-xs font-semibold pl-8 pr-4 py-2 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-100 shadow-sm"
+                className="appearance-none bg-white border border-gray-200 text-gray-600 text-xs font-semibold pl-8 pr-4 py-2 rounded-full focus:outline-none focus:ring-2 focus:ring-sky-100 shadow-sm"
               >
                 <option value="date-desc">Newest</option>{" "}
                 <option value="date-asc">Oldest</option>{" "}
@@ -452,7 +462,7 @@ export default function HomePage() {
 
           {isLoading ? (
             <div className="flex justify-center py-10">
-              <Loader2 className="animate-spin text-blue-600" />
+              <Loader2 className="animate-spin text-sky-700" />
             </div>
           ) : transactions.length === 0 ? (
             <div className="text-center py-10 text-gray-400 text-sm">
@@ -508,7 +518,7 @@ export default function HomePage() {
                           e.stopPropagation();
                           handleEdit(item);
                         }}
-                        className="text-gray-300 hover:text-blue-500 hover:bg-blue-50 p-1.5 rounded-lg transition-colors"
+                        className="text-gray-300 hover:text-sky-700 hover:bg-sky-50 p-1.5 rounded-lg transition-colors"
                       >
                         <Pencil size={16} />
                       </button>
@@ -530,7 +540,7 @@ export default function HomePage() {
         </main>
 
         <nav className="flex-none bg-white border-t border-gray-100 py-3 px-15 flex justify-between items-center z-40 shadow-[0_-5px_10px_rgba(0,0,0,0.02)]">
-          <Link href="/" className="flex flex-col items-center text-blue-600">
+          <Link href="/" className="flex flex-col items-center text-sky-700">
             <Home size={24} />
             <span className="text-[10px] font-medium mt-1">Home</span>
           </Link>
@@ -540,21 +550,21 @@ export default function HomePage() {
                 resetForm();
                 setIsDrawerOpen(true);
               }}
-              className="bg-blue-600 text-white h-14 w-14 rounded-full shadow-lg shadow-blue-600/40 flex items-center justify-center transform active:scale-95 transition-all hover:bg-blue-700"
+              className="bg-sky-700 text-white h-14 w-14 rounded-full shadow-lg shadow-sky-700/40 flex items-center justify-center transform active:scale-95 transition-all hover:bg-sky-800"
             >
               <Plus size={32} />
             </button>
           </div>
           <Link
             href="/stats"
-            className="flex flex-col items-center text-gray-400 hover:text-blue-600 transition-colors"
+            className="flex flex-col items-center text-gray-400 hover:text-sky-700 transition-colors"
           >
             <PieChart size={24} />
             <span className="text-[10px] font-medium mt-1">Stats</span>
           </Link>
         </nav>
 
-        {/* --- AI ADVISOR MODAL (NEW: Scrollable & Markdown) --- */}
+        {/* --- AI ADVISOR MODAL --- */}
         {isAiModalOpen && (
           <div
             className="absolute inset-0 z-90 flex items-center justify-center px-4 bg-black/60 backdrop-blur-sm"
@@ -566,14 +576,14 @@ export default function HomePage() {
             >
               {/* HEADER */}
               <div className="flex items-center gap-3 mb-4 border-b border-gray-100 pb-4 shrink-0">
-                <div className="bg-linear-to-tr from-blue-500 to-purple-600 p-3 rounded-full text-white shadow-lg shadow-blue-500/30">
+                <div className="bg-linear-to-tr from-sky-700 to-purple-600 p-3 rounded-full text-white shadow-lg shadow-sky-700/30">
                   <Sparkles size={24} />
                 </div>
                 <div>
                   <h3 className="text-xl font-bold text-gray-900 leading-none">
                     Financial Advisor
                   </h3>
-                  <p className="text-xs text-blue-500 font-medium mt-1">
+                  <p className="text-xs text-sky-700 font-medium mt-1">
                     Powered by Gemini AI
                   </p>
                 </div>
@@ -585,7 +595,7 @@ export default function HomePage() {
                 </button>
               </div>
 
-              {/* CONTENT (MARKDOWN & SCROLLABLE) */}
+              {/* CONTENT */}
               <div className="overflow-y-auto text-sm text-gray-700 leading-relaxed space-y-4 whitespace-pre-wrap pr-2 mb-4 custom-scrollbar">
                 <ReactMarkdown
                   components={{
@@ -615,13 +625,13 @@ export default function HomePage() {
                 onClick={() => setIsAiModalOpen(false)}
                 className="w-full bg-gray-900 text-white py-3.5 rounded-xl font-bold hover:bg-gray-800 active:scale-[0.98] transition-all shrink-0 shadow-lg"
               >
-                Siap, Mengerti!
+                Kembali
               </button>
             </div>
           </div>
         )}
 
-        {/* BUDGET MODAL */}
+        {/* --- BUDGET MODAL (UPDATED WITH LIMIT) --- */}
         {isBudgetModalOpen && (
           <div
             className="absolute inset-0 z-80 flex items-center justify-center px-4 bg-black/60 backdrop-blur-sm"
@@ -637,7 +647,7 @@ export default function HomePage() {
               <input
                 type="text"
                 inputMode="numeric"
-                className="w-full bg-gray-50 p-3 rounded-xl font-bold text-lg text-gray-800 text-center focus:outline-none focus:ring-2 focus:ring-blue-100 mb-4"
+                className="w-full bg-gray-50 p-3 rounded-xl font-bold text-lg text-gray-800 text-center focus:outline-none focus:ring-2 focus:ring-sky-100 mb-2"
                 placeholder="e.g. 2000000"
                 value={
                   tempBudget
@@ -649,9 +659,18 @@ export default function HomePage() {
                 onChange={(e) => setTempBudget(e.target.value)}
                 autoFocus
               />
+
+              {/* INFO BATAS MAKSIMAL */}
+              <p className="text-xs text-gray-400 text-center mb-4">
+                Maksimal:{" "}
+                <span className="text-sky-700 font-bold">
+                  {formatCurrency(income)}
+                </span>
+              </p>
+
               <button
                 onClick={saveBudget}
-                className="w-full bg-blue-600 text-white py-3 rounded-xl font-bold"
+                className="w-full bg-sky-700 text-white py-3 rounded-xl font-bold hover:bg-sky-800 transition active:scale-95"
               >
                 Save Budget
               </button>
@@ -659,13 +678,21 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* TOAST, DETAIL MODAL, DELETE MODAL, FORM DRAWER */}
+        {/* TOAST (UPDATED TO CENTER) */}
         {toast.show && (
           <div
-            className={`fixed top-4 left-1/2 transform -translate-x-1/2 z-90 transition-all duration-300 ${toast.show ? "translate-y-0 opacity-100" : "-translate-y-10 opacity-0 pointer-events-none"}`}
+            className={`fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-90 transition-all duration-300 ${
+              toast.show
+                ? "opacity-100 scale-100"
+                : "opacity-0 scale-90 pointer-events-none"
+            }`}
           >
             <div
-              className={`flex items-center gap-2 px-4 py-3 rounded-full shadow-xl ${toast.type === "success" ? "bg-black text-white" : "bg-red-500 text-white"}`}
+              className={`flex items-center gap-2 px-4 py-3 rounded-full shadow-xl ${
+                toast.type === "success"
+                  ? "bg-black text-white"
+                  : "bg-red-500 text-white"
+              }`}
             >
               {toast.type === "success" ? (
                 <CheckCircle size={18} />
@@ -827,7 +854,7 @@ export default function HomePage() {
                   <input
                     type="text"
                     placeholder="e.g. Coffee"
-                    className="w-full bg-gray-50 p-3 rounded-xl font-medium text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-100"
+                    className="w-full bg-gray-50 p-3 rounded-xl font-medium text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-sky-100"
                     value={formData.title}
                     onChange={(e) =>
                       setFormData({ ...formData, title: e.target.value })
@@ -906,7 +933,7 @@ export default function HomePage() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full bg-blue-600 text-white py-3 rounded-xl font-bold text-base mt-2 shadow-lg shadow-blue-600/30 active:scale-95 transition-all disabled:opacity-50"
+                  className="w-full bg-sky-600 text-white py-3 rounded-xl font-bold text-base mt-2 shadow-lg shadow-blue-600/30 active:scale-95 transition-all disabled:opacity-50"
                 >
                   {isSubmitting
                     ? "Saving..."
