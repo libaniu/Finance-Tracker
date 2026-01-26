@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
+import ThemeToggle from "@/components/ThemeToggle";
 import {
   PieChart,
   Plus,
@@ -329,10 +330,10 @@ export default function HomePage() {
     });
 
   return (
-    <div className="bg-gray-100 min-h-screen flex justify-center">
-      <div className="fixed inset-0 w-full max-w-md bg-slate-50 h-dvh flex flex-col overflow-hidden shadow-2xl overscroll-none mx-auto">
+    <div className="bg-gray-100 dark:bg-slate-950 min-h-screen flex justify-center">
+      <div className="fixed inset-0 w-full max-w-md bg-slate-50 dark:bg-slate-900 h-dvh flex flex-col overflow-hidden shadow-2xl overscroll-none mx-auto">
         {/* HEADER */}
-        <header className="flex-none bg-sky-700 px-6 pt-8 pb-10 rounded-b-[2.5rem] text-white relative z-10 shadow-md">
+        <header className="flex-none bg-sky-700 dark:bg-sky-800 px-6 pt-8 pb-10 rounded-b-[2.5rem] text-white relative z-10 shadow-md">
           <div className="flex justify-between items-center mb-6">
             <div>
               <p className="text-sky-100 text-sm mb-1">Total Balance</p>
@@ -367,29 +368,35 @@ export default function HomePage() {
               >
                 <Settings size={20} />
               </button>
+
+              <ThemeToggle />
             </div>
           </div>
 
-          <div className="bg-white text-gray-800 p-3 rounded-2xl shadow-lg flex justify-between items-center gap-2">
+          <div className="bg-white dark:bg-slate-800 text-gray-800 dark:text-slate-100 p-3 rounded-2xl shadow-lg flex justify-between items-center gap-2">
             <div className="flex items-center gap-2 w-1/2 overflow-hidden">
-              <div className="bg-green-100 p-1.5 rounded-full text-green-600 shrink-0">
+              <div className="bg-green-100 dark:bg-green-900 p-1.5 rounded-full text-green-600 dark:text-green-400 shrink-0">
                 <ArrowUpCircle size={20} />
               </div>
               <div className="min-w-0">
-                <p className="text-[10px] text-gray-500">Income</p>
-                <p className="font-bold text-xs sm:text-sm text-green-600 truncate">
+                <p className="text-[10px] text-gray-500 dark:text-slate-400">
+                  Income
+                </p>
+                <p className="font-bold text-xs sm:text-sm text-green-600 dark:text-green-400 truncate">
                   {isLoading ? "..." : formatCurrency(income)}
                 </p>
               </div>
             </div>
-            <div className="w-px h-8 bg-gray-200 shrink-0"></div>
+            <div className="w-px h-8 bg-gray-200 dark:bg-slate-700 shrink-0"></div>
             <div className="flex items-center gap-2 w-1/2 pl-1 overflow-hidden">
-              <div className="bg-red-100 p-1.5 rounded-full text-red-600 shrink-0">
+              <div className="bg-red-100 dark:bg-red-900 p-1.5 rounded-full text-red-600 dark:text-red-400 shrink-0">
                 <ArrowDownCircle size={20} />
               </div>
               <div className="min-w-0">
-                <p className="text-[10px] text-gray-500">Expense</p>
-                <p className="font-bold text-xs sm:text-sm text-red-600 truncate">
+                <p className="text-[10px] text-gray-500 dark:text-slate-400">
+                  Expense
+                </p>
+                <p className="font-bold text-xs sm:text-sm text-red-600 dark:text-red-400 truncate">
                   {isLoading ? "..." : formatCurrency(expense)}
                 </p>
               </div>
@@ -400,22 +407,22 @@ export default function HomePage() {
         {/* MAIN CONTENT */}
         <main className="flex-1 px-6 pt-6 pb-6 overflow-y-auto overscroll-y-auto scroll-smooth">
           {monthlyBudget > 0 && (
-            <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm mb-6">
+            <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm mb-6">
               <div className="flex justify-between items-center mb-2">
-                <span className="text-xs font-bold text-gray-700">
+                <span className="text-xs font-bold text-gray-700 dark:text-slate-200">
                   Monthly Budget
                 </span>
-                <span className="text-xs font-medium text-gray-700">
+                <span className="text-xs font-medium text-gray-700 dark:text-slate-200">
                   {Math.round(budgetPercentage)}% used
                 </span>
               </div>
-              <div className="h-3 w-full bg-gray-100 rounded-full overflow-hidden">
+              <div className="h-3 w-full bg-gray-100 dark:bg-slate-700 rounded-full overflow-hidden">
                 <div
                   className={`h-full ${progressColor} transition-all duration-500 ease-out`}
                   style={{ width: `${budgetPercentage}%` }}
                 ></div>
               </div>
-              <div className="flex justify-between mt-2 text-[10px] text-gray-400">
+              <div className="flex justify-between mt-2 text-[10px] text-gray-400 dark:text-slate-500">
                 <span>Used: {formatCurrency(expense)}</span>
                 <span>Limit: {formatCurrency(monthlyBudget)}</span>
               </div>
@@ -425,13 +432,13 @@ export default function HomePage() {
           <div className="mb-4">
             <div className="relative">
               <Search
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500"
                 size={18}
               />
               <input
                 type="text"
                 placeholder="Search transaction..."
-                className="w-full bg-white border border-gray-100 pl-10 pr-4 py-3 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-sky-100 shadow-sm placeholder:text-gray-300"
+                className="w-full bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 pl-10 pr-4 py-3 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-sky-100 dark:focus:ring-sky-700 shadow-sm placeholder:text-gray-300 dark:placeholder:text-slate-500 text-gray-900 dark:text-slate-100"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -439,18 +446,18 @@ export default function HomePage() {
           </div>
 
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-bold text-gray-800">
+            <h2 className="text-lg font-bold text-gray-800 dark:text-slate-100">
               Recent Transactions
             </h2>
             <div className="relative">
               <ArrowUpDown
                 size={14}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-slate-400"
               />
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="appearance-none bg-white border border-gray-200 text-gray-600 text-xs font-semibold pl-8 pr-4 py-2 rounded-full focus:outline-none focus:ring-2 focus:ring-sky-100 shadow-sm"
+                className="appearance-none bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-300 text-xs font-semibold pl-8 pr-4 py-2 rounded-full focus:outline-none focus:ring-2 focus:ring-sky-100 dark:focus:ring-sky-700 shadow-sm"
               >
                 <option value="date-desc">Newest</option>{" "}
                 <option value="date-asc">Oldest</option>{" "}
@@ -465,11 +472,11 @@ export default function HomePage() {
               <Loader2 className="animate-spin text-sky-700" />
             </div>
           ) : transactions.length === 0 ? (
-            <div className="text-center py-10 text-gray-400 text-sm">
+            <div className="text-center py-10 text-gray-400 dark:text-slate-500 text-sm">
               No transactions yet.
             </div>
           ) : processedTransactions.length === 0 ? (
-            <div className="text-center py-10 text-gray-400 text-sm">
+            <div className="text-center py-10 text-gray-400 dark:text-slate-500 text-sm">
               No transaction found for "{searchQuery}".
             </div>
           ) : (
@@ -478,11 +485,11 @@ export default function HomePage() {
                 <div
                   key={item.id}
                   onClick={() => setDetailModal(item)}
-                  className="relative flex items-center justify-between bg-white p-4 rounded-2xl border border-gray-50 shadow-sm hover:shadow-md transition-all group active:scale-[0.98] cursor-pointer"
+                  className="relative flex items-center justify-between bg-white dark:bg-slate-800 p-4 rounded-2xl border border-gray-50 dark:border-slate-700 shadow-sm hover:shadow-md dark:hover:shadow-slate-900 transition-all group active:scale-[0.98] cursor-pointer"
                 >
                   <div className="flex items-center gap-4 flex-1 min-w-0 pr-2">
                     <div
-                      className={`w-12 h-12 flex items-center justify-center rounded-full shrink-0 ${item.type === "income" ? "bg-green-50 text-green-600" : "bg-red-50 text-red-600"}`}
+                      className={`w-12 h-12 flex items-center justify-center rounded-full shrink-0 ${item.type === "income" ? "bg-green-50 dark:bg-green-900 text-green-600 dark:text-green-400" : "bg-red-50 dark:bg-red-900 text-red-600 dark:text-red-400"}`}
                     >
                       {item.type === "income" ? (
                         <ArrowUpCircle size={24} />
@@ -491,14 +498,14 @@ export default function HomePage() {
                       )}
                     </div>
                     <div className="flex flex-col min-w-0">
-                      <h3 className="font-bold text-gray-900 text-sm truncate leading-tight mb-1">
+                      <h3 className="font-bold text-gray-900 dark:text-slate-100 text-sm truncate leading-tight mb-1">
                         {item.title}
                       </h3>
-                      <div className="flex items-center gap-1.5 text-xs text-gray-400">
-                        <span className="truncate max-w-25 font-medium text-gray-500">
+                      <div className="flex items-center gap-1.5 text-xs text-gray-400 dark:text-slate-500">
+                        <span className="truncate max-w-25 font-medium text-gray-500 dark:text-slate-400">
                           {item.category || "Others"}
                         </span>
-                        <span className="w-1 h-1 bg-gray-300 rounded-full shrink-0"></span>
+                        <span className="w-1 h-1 bg-gray-300 dark:bg-slate-600 rounded-full shrink-0"></span>
                         <span className="whitespace-nowrap">
                           {formatDate(item.date)}
                         </span>
@@ -507,7 +514,7 @@ export default function HomePage() {
                   </div>
                   <div className="flex flex-col items-end gap-1 shrink-0">
                     <p
-                      className={`font-bold text-sm whitespace-nowrap ${item.type === "income" ? "text-green-600" : "text-gray-900"}`}
+                      className={`font-bold text-sm whitespace-nowrap ${item.type === "income" ? "text-green-600 dark:text-green-400" : "text-gray-900 dark:text-slate-100"}`}
                     >
                       {item.type === "expense" && "- "}
                       {formatCurrency(item.amount)}
@@ -518,7 +525,7 @@ export default function HomePage() {
                           e.stopPropagation();
                           handleEdit(item);
                         }}
-                        className="text-gray-300 hover:text-sky-700 hover:bg-sky-50 p-1.5 rounded-lg transition-colors"
+                        className="text-gray-300 dark:text-slate-500 hover:text-sky-700 dark:hover:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-900 p-1.5 rounded-lg transition-colors"
                       >
                         <Pencil size={16} />
                       </button>
@@ -527,7 +534,7 @@ export default function HomePage() {
                           e.stopPropagation();
                           setDeleteModal({ show: true, id: item.id });
                         }}
-                        className="text-gray-300 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-lg transition-colors"
+                        className="text-gray-300 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900 p-1.5 rounded-lg transition-colors"
                       >
                         <Trash2 size={16} />
                       </button>
@@ -539,8 +546,11 @@ export default function HomePage() {
           )}
         </main>
 
-        <nav className="flex-none bg-white border-t border-gray-100 py-3 px-17 flex justify-between items-center z-40 shadow-[0_-5px_10px_rgba(0,0,0,0.02)]">
-          <Link href="/" className="flex flex-col items-center text-sky-700">
+        <nav className="flex-none bg-white dark:bg-slate-800 border-t border-gray-100 dark:border-slate-700 py-3 px-17 flex justify-between items-center z-40 shadow-[0_-5px_10px_rgba(0,0,0,0.02)] dark:shadow-[0_-5px_10px_rgba(0,0,0,0.3)]">
+          <Link
+            href="/"
+            className="flex flex-col items-center text-sky-700 dark:text-sky-400"
+          >
             <Home size={24} />
             <span className="text-[10px] font-medium mt-1">Home</span>
           </Link>
@@ -550,14 +560,14 @@ export default function HomePage() {
                 resetForm();
                 setIsDrawerOpen(true);
               }}
-              className="bg-sky-700 text-white h-14 w-14 rounded-full shadow-lg shadow-sky-700/40 flex items-center justify-center transform active:scale-95 transition-all hover:bg-sky-800"
+              className="bg-sky-700 dark:bg-sky-800 text-white h-14 w-14 rounded-full shadow-lg shadow-sky-700/40 dark:shadow-sky-800/40 flex items-center justify-center transform active:scale-95 transition-all hover:bg-sky-800 dark:hover:bg-sky-700"
             >
               <Plus size={32} />
             </button>
           </div>
           <Link
             href="/stats"
-            className="flex flex-col items-center text-gray-400 hover:text-sky-700 transition-colors"
+            className="flex flex-col items-center text-gray-400 dark:text-slate-400 hover:text-sky-700 dark:hover:text-sky-400 transition-colors"
           >
             <PieChart size={24} />
             <span className="text-[10px] font-medium mt-1">Stats</span>
@@ -571,36 +581,39 @@ export default function HomePage() {
             onClick={() => setIsAiModalOpen(false)}
           >
             <div
-              className="bg-white w-full max-w-sm rounded-3xl p-6 relative animate-in zoom-in-95 duration-300 shadow-2xl flex flex-col max-h-[85vh]"
+              className="bg-white dark:bg-slate-800 w-full max-w-sm rounded-3xl p-6 relative animate-in zoom-in-95 duration-300 shadow-2xl flex flex-col max-h-[85vh]"
               onClick={(e) => e.stopPropagation()}
             >
               {/* HEADER */}
-              <div className="flex items-center gap-3 mb-4 border-b border-gray-100 pb-4 shrink-0">
+              <div className="flex items-center gap-3 mb-4 border-b border-gray-100 dark:border-slate-700 pb-4 shrink-0">
                 <div className="bg-linear-to-tr from-sky-700 to-purple-600 p-3 rounded-full text-white shadow-lg shadow-sky-700/30">
                   <Sparkles size={24} />
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-gray-900 leading-none">
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-slate-100 leading-none">
                     Financial Advisor
                   </h3>
-                  <p className="text-xs text-sky-700 font-medium mt-1">
+                  <p className="text-xs text-sky-700 dark:text-sky-400 font-medium mt-1">
                     Powered by Gemini AI
                   </p>
                 </div>
                 <button
                   onClick={() => setIsAiModalOpen(false)}
-                  className="ml-auto bg-gray-50 hover:bg-gray-100 p-2 rounded-full text-gray-400 hover:text-gray-600 transition-colors"
+                  className="ml-auto bg-gray-50 dark:bg-slate-700 hover:bg-gray-100 dark:hover:bg-slate-600 p-2 rounded-full text-gray-400 dark:text-slate-400 hover:text-gray-600 dark:hover:text-slate-200 transition-colors"
                 >
                   <X size={20} />
                 </button>
               </div>
 
               {/* CONTENT */}
-              <div className="overflow-y-auto text-sm text-gray-700 leading-relaxed space-y-4 whitespace-pre-wrap pr-2 mb-4 custom-scrollbar">
+              <div className="overflow-y-auto text-sm text-gray-700 dark:text-slate-300 leading-relaxed space-y-4 whitespace-pre-wrap pr-2 mb-4 custom-scrollbar">
                 <ReactMarkdown
                   components={{
                     strong: ({ node, ...props }) => (
-                      <span className="font-bold text-gray-900" {...props} />
+                      <span
+                        className="font-bold text-gray-900 dark:text-slate-100"
+                        {...props}
+                      />
                     ),
                     ul: ({ node, ...props }) => (
                       <ul className="list-disc ml-4 space-y-1" {...props} />
@@ -623,7 +636,7 @@ export default function HomePage() {
               {/* FOOTER BUTTON */}
               <button
                 onClick={() => setIsAiModalOpen(false)}
-                className="w-full bg-gray-900 text-white py-3.5 rounded-xl font-bold hover:bg-gray-800 active:scale-[0.98] transition-all shrink-0 shadow-lg"
+                className="w-full bg-gray-900 dark:bg-gray-700 text-white py-3.5 rounded-xl font-bold hover:bg-gray-800 dark:hover:bg-gray-600 active:scale-[0.98] transition-all shrink-0 shadow-lg"
               >
                 Kembali
               </button>
@@ -638,16 +651,16 @@ export default function HomePage() {
             onClick={() => setIsBudgetModalOpen(false)}
           >
             <div
-              className="bg-white w-full max-w-xs p-6 rounded-2xl shadow-2xl relative z-10 animate-in zoom-in-95 duration-200"
+              className="bg-white dark:bg-slate-800 w-full max-w-xs p-6 rounded-2xl shadow-2xl relative z-10 animate-in zoom-in-95 duration-200"
               onClick={(e) => e.stopPropagation()}
             >
-              <h3 className="text-lg font-bold text-gray-900 mb-4 text-center">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-slate-100 mb-4 text-center">
                 Set Monthly Budget
               </h3>
               <input
                 type="text"
                 inputMode="numeric"
-                className="w-full bg-gray-50 p-3 rounded-xl font-bold text-lg text-gray-800 text-center focus:outline-none focus:ring-2 focus:ring-sky-100 mb-2"
+                className="w-full bg-gray-50 dark:bg-slate-700 p-3 rounded-xl font-bold text-lg text-gray-800 dark:text-slate-100 text-center focus:outline-none focus:ring-2 focus:ring-sky-100 dark:focus:ring-sky-700 mb-2"
                 placeholder="e.g. 2000000"
                 value={
                   tempBudget
@@ -661,16 +674,16 @@ export default function HomePage() {
               />
 
               {/* INFO BATAS MAKSIMAL */}
-              <p className="text-xs text-gray-400 text-center mb-4">
+              <p className="text-xs text-gray-400 dark:text-slate-500 text-center mb-4">
                 Maksimal:{" "}
-                <span className="text-sky-700 font-bold">
+                <span className="text-sky-700 dark:text-sky-400 font-bold">
                   {formatCurrency(income)}
                 </span>
               </p>
 
               <button
                 onClick={saveBudget}
-                className="w-full bg-sky-700 text-white py-3 rounded-xl font-bold hover:bg-sky-800 transition active:scale-95"
+                className="w-full bg-sky-700 dark:bg-sky-800 text-white py-3 rounded-xl font-bold hover:bg-sky-800 dark:hover:bg-sky-700 transition active:scale-95"
               >
                 Save Budget
               </button>
@@ -690,8 +703,8 @@ export default function HomePage() {
             <div
               className={`flex items-center gap-2 px-4 py-3 rounded-full shadow-xl ${
                 toast.type === "success"
-                  ? "bg-black text-white"
-                  : "bg-red-500 text-white"
+                  ? "bg-black dark:bg-gray-700 text-white"
+                  : "bg-red-500 dark:bg-red-600 text-white"
               }`}
             >
               {toast.type === "success" ? (
@@ -710,9 +723,9 @@ export default function HomePage() {
               className="absolute inset-0 bg-black/60 backdrop-blur-sm"
               onClick={() => setDetailModal(null)}
             ></div>
-            <div className="bg-white w-full max-w-xs p-6 rounded-3xl shadow-2xl relative z-10 flex flex-col items-center animate-in zoom-in-95 duration-200">
+            <div className="bg-white dark:bg-slate-800 w-full max-w-xs p-6 rounded-3xl shadow-2xl relative z-10 flex flex-col items-center animate-in zoom-in-95 duration-200">
               <div
-                className={`p-4 rounded-full mb-4 ${detailModal.type === "income" ? "bg-green-100 text-green-600" : "bg-red-100 text-red-600"}`}
+                className={`p-4 rounded-full mb-4 ${detailModal.type === "income" ? "bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-400" : "bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-400"}`}
               >
                 {detailModal.type === "income" ? (
                   <ArrowUpCircle size={32} />
@@ -720,56 +733,56 @@ export default function HomePage() {
                   <Wallet size={32} />
                 )}
               </div>
-              <h3 className="text-gray-500 text-xs font-medium uppercase tracking-wide mb-1">
+              <h3 className="text-gray-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wide mb-1">
                 {detailModal.type === "income" ? "Income" : "Expense"}
               </h3>
               <h2
-                className={`text-2xl font-bold mb-6 ${detailModal.type === "income" ? "text-green-600" : "text-red-600"}`}
+                className={`text-2xl font-bold mb-6 ${detailModal.type === "income" ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}
               >
                 {detailModal.type === "expense" && "- "}
                 {formatCurrency(detailModal.amount)}
               </h2>
-              <div className="w-full space-y-4 bg-gray-50 p-4 rounded-xl border border-gray-100">
+              <div className="w-full space-y-4 bg-gray-50 dark:bg-slate-700 p-4 rounded-xl border border-gray-100 dark:border-slate-600">
                 <div className="flex justify-between items-start">
-                  <span className="text-gray-400 text-xs font-medium">
+                  <span className="text-gray-400 dark:text-slate-400 text-xs font-medium">
                     Title
                   </span>
-                  <span className="text-gray-800 text-sm font-bold text-right max-w-37.5 wrap-break-word">
+                  <span className="text-gray-800 dark:text-slate-100 text-sm font-bold text-right max-w-37.5 wrap-break-word">
                     {detailModal.title}
                   </span>
                 </div>
-                <div className="h-px bg-gray-200"></div>
+                <div className="h-px bg-gray-200 dark:bg-slate-600"></div>
                 <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-1.5 text-gray-400">
+                  <div className="flex items-center gap-1.5 text-gray-400 dark:text-slate-400">
                     <Tag size={14} />
                     <span className="text-xs font-medium">Category</span>
                   </div>
-                  <span className="text-gray-800 text-sm font-semibold">
+                  <span className="text-gray-800 dark:text-slate-100 text-sm font-semibold">
                     {detailModal.category || "-"}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-1.5 text-gray-400">
+                  <div className="flex items-center gap-1.5 text-gray-400 dark:text-slate-400">
                     <Calendar size={14} />
                     <span className="text-xs font-medium">Date</span>
                   </div>
-                  <span className="text-gray-800 text-sm font-semibold">
+                  <span className="text-gray-800 dark:text-slate-100 text-sm font-semibold">
                     {formatFullDate(detailModal.date)}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-1.5 text-gray-400">
+                  <div className="flex items-center gap-1.5 text-gray-400 dark:text-slate-400">
                     <Clock size={14} />
                     <span className="text-xs font-medium">Time</span>
                   </div>
-                  <span className="text-gray-800 text-sm font-semibold">
+                  <span className="text-gray-800 dark:text-slate-100 text-sm font-semibold">
                     {formatTime(detailModal.date)}
                   </span>
                 </div>
               </div>
               <button
                 onClick={() => setDetailModal(null)}
-                className="mt-6 w-full bg-gray-100 text-gray-700 py-3 rounded-xl font-bold text-sm hover:bg-gray-200 transition-colors"
+                className="mt-6 w-full bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-100 py-3 rounded-xl font-bold text-sm hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
               >
                 Close
               </button>
@@ -783,24 +796,24 @@ export default function HomePage() {
               className="absolute inset-0 bg-black/60 backdrop-blur-sm"
               onClick={() => setDeleteModal({ show: false, id: null })}
             ></div>
-            <div className="bg-white w-full max-w-xs p-6 rounded-2xl shadow-2xl relative z-10 animate-in zoom-in-95 duration-200">
+            <div className="bg-white dark:bg-slate-800 w-full max-w-xs p-6 rounded-2xl shadow-2xl relative z-10 animate-in zoom-in-95 duration-200">
               <div className="flex flex-col items-center text-center">
-                <div className="bg-red-100 p-3 rounded-full text-red-600 mb-4">
+                <div className="bg-red-100 dark:bg-red-900 p-3 rounded-full text-red-600 dark:text-red-400 mb-4">
                   <AlertTriangle size={32} />
                 </div>
-                <h3 className="text-lg font-bold text-gray-900 mb-2">
+                <h3 className="text-lg font-bold text-gray-900 dark:text-slate-100 mb-2">
                   Delete Transaction?
                 </h3>
                 <div className="flex gap-3 w-full mt-4">
                   <button
                     onClick={() => setDeleteModal({ show: false, id: null })}
-                    className="flex-1 py-2.5 rounded-xl text-gray-700 font-medium hover:bg-gray-100 transition-colors"
+                    className="flex-1 py-2.5 rounded-xl text-gray-700 dark:text-slate-200 font-medium hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
                   >
                     Cancel
                   </button>
                   <button
                     onClick={executeDelete}
-                    className="flex-1 py-2.5 rounded-xl bg-red-600 text-white font-medium hover:bg-red-700 transition-colors"
+                    className="flex-1 py-2.5 rounded-xl bg-red-600 dark:bg-red-700 text-white font-medium hover:bg-red-700 dark:hover:bg-red-600 transition-colors"
                   >
                     Delete
                   </button>
@@ -816,14 +829,14 @@ export default function HomePage() {
               className="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
               onClick={resetForm}
             ></div>
-            <div className="bg-white rounded-t-4xl p-5 relative z-10 animate-in slide-in-from-bottom duration-300">
+            <div className="bg-white dark:bg-slate-800 rounded-t-4xl p-5 relative z-10 animate-in slide-in-from-bottom duration-300">
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-bold text-gray-800">
+                <h3 className="text-lg font-bold text-gray-800 dark:text-slate-100">
                   {editingId ? "Edit Transaction" : "Add Transaction"}
                 </h3>
                 <button
                   onClick={resetForm}
-                  className="bg-gray-100 p-2 rounded-full text-gray-500"
+                  className="bg-gray-100 dark:bg-slate-700 p-2 rounded-full text-gray-500 dark:text-slate-400"
                 >
                   <X size={18} />
                 </button>
@@ -835,26 +848,26 @@ export default function HomePage() {
                     onClick={() =>
                       setFormData({ ...formData, type: "expense" })
                     }
-                    className={`py-2.5 rounded-xl font-medium text-sm transition-all ${formData.type === "expense" ? "bg-red-100 text-red-600 border-2 border-red-200" : "bg-gray-50 text-gray-400"}`}
+                    className={`py-2.5 rounded-xl font-medium text-sm transition-all ${formData.type === "expense" ? "bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-400 border-2 border-red-200 dark:border-red-800" : "bg-gray-50 dark:bg-slate-700 text-gray-400 dark:text-slate-500"}`}
                   >
                     Expense
                   </button>
                   <button
                     type="button"
                     onClick={() => setFormData({ ...formData, type: "income" })}
-                    className={`py-2.5 rounded-xl font-medium text-sm transition-all ${formData.type === "income" ? "bg-green-100 text-green-600 border-2 border-green-200" : "bg-gray-50 text-gray-400"}`}
+                    className={`py-2.5 rounded-xl font-medium text-sm transition-all ${formData.type === "income" ? "bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-400 border-2 border-green-200 dark:border-green-800" : "bg-gray-50 dark:bg-slate-700 text-gray-400 dark:text-slate-500"}`}
                   >
                     Income
                   </button>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">
+                  <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">
                     Title
                   </label>
                   <input
                     type="text"
                     placeholder="e.g. Coffee"
-                    className="w-full bg-gray-50 p-3 rounded-xl font-medium text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-sky-100"
+                    className="w-full bg-gray-50 dark:bg-slate-700 p-3 rounded-xl font-medium text-sm text-gray-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-100 dark:focus:ring-sky-700 placeholder:text-gray-400 dark:placeholder:text-slate-500"
                     value={formData.title}
                     onChange={(e) =>
                       setFormData({ ...formData, title: e.target.value })
@@ -863,31 +876,31 @@ export default function HomePage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">
+                  <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">
                     Amount
                   </label>
                   <input
                     type="text"
                     inputMode="numeric"
                     placeholder="0"
-                    className="w-full bg-gray-50 p-3 rounded-xl font-bold text-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-100"
+                    className="w-full bg-gray-50 dark:bg-slate-700 p-3 rounded-xl font-bold text-lg text-gray-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-700"
                     value={displayAmount}
                     onChange={handleAmountChange}
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">
+                  <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">
                     Date
                   </label>
                   <div className="relative">
                     <Calendar
                       size={16}
-                      className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+                      className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500"
                     />
                     <input
                       type="date"
-                      className="w-full bg-gray-50 p-3 pl-10 rounded-xl font-medium text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-100 appearance-none"
+                      className="w-full bg-gray-50 dark:bg-slate-700 p-3 pl-10 rounded-xl font-medium text-sm text-gray-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-700 appearance-none"
                       value={formData.date}
                       onChange={(e) =>
                         setFormData({ ...formData, date: e.target.value })
@@ -897,20 +910,20 @@ export default function HomePage() {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">
+                  <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">
                     Category
                   </label>
                   <div className="relative">
                     <Tag
                       size={16}
-                      className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+                      className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500"
                     />
                     <select
                       value={formData.category}
                       onChange={(e) =>
                         setFormData({ ...formData, category: e.target.value })
                       }
-                      className="w-full bg-gray-50 p-3 pl-10 rounded-xl font-medium text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-100 appearance-none"
+                      className="w-full bg-gray-50 dark:bg-slate-700 p-3 pl-10 rounded-xl font-medium text-sm text-gray-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-700 appearance-none"
                       required
                     >
                       <option value="" disabled>
@@ -933,7 +946,7 @@ export default function HomePage() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full bg-sky-600 text-white py-3 rounded-xl font-bold text-base mt-2 shadow-lg shadow-blue-600/30 active:scale-95 transition-all disabled:opacity-50"
+                  className="w-full bg-sky-600 dark:bg-sky-700 text-white py-3 rounded-xl font-bold text-base mt-2 shadow-lg shadow-blue-600/30 dark:shadow-blue-800/30 active:scale-95 transition-all disabled:opacity-50"
                 >
                   {isSubmitting
                     ? "Saving..."

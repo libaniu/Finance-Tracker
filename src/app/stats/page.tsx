@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import ThemeToggle from "@/components/ThemeToggle";
 import {
   PieChart as PieIcon,
   Home,
@@ -70,10 +71,10 @@ export default function StatsPage() {
     // Format ke YYYY-MM-DD untuk input HTML
     // Menggunakan toLocaleDateString('en-CA') menghasilkan format YYYY-MM-DD yang konsisten
     const formatToInput = (date: Date) => {
-        const offset = date.getTimezoneOffset();
-        const localDate = new Date(date.getTime() - (offset*60*1000));
-        return localDate.toISOString().split('T')[0];
-    }
+      const offset = date.getTimezoneOffset();
+      const localDate = new Date(date.getTime() - offset * 60 * 1000);
+      return localDate.toISOString().split("T")[0];
+    };
 
     setStartDate(formatToInput(start));
     setEndDate(formatToInput(end));
@@ -188,11 +189,10 @@ export default function StatsPage() {
   };
 
   return (
-    <div className="bg-gray-100 min-h-screen flex justify-center">
-      <div className="fixed inset-0 w-full max-w-md bg-slate-50 h-dvh flex flex-col overflow-hidden shadow-2xl overscroll-none mx-auto">
-        
+    <div className="bg-gray-100 dark:bg-slate-950 min-h-screen flex justify-center">
+      <div className="fixed inset-0 w-full max-w-md bg-slate-50 dark:bg-slate-900 h-dvh flex flex-col overflow-hidden shadow-2xl overscroll-none mx-auto">
         {/* HEADER DENGAN CUSTOM DATE RANGE */}
-        <header className="flex-none bg-sky-700 px-6 pt-8 pb-6 rounded-b-4xl text-white shadow-md z-10">
+        <header className="flex-none bg-sky-700 dark:bg-sky-800 px-6 pt-8 pb-6 rounded-b-4xl text-white shadow-md z-10">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-4">
               <Link
@@ -204,14 +204,17 @@ export default function StatsPage() {
               <h1 className="text-2xl font-bold">Statistics</h1>
             </div>
 
-            <button
-              onClick={downloadExcel}
-              disabled={filteredTransactions.length === 0}
-              className="bg-white/20 p-2 rounded-full hover:bg-white/30 transition disabled:opacity-50"
-              title="Download Excel"
-            >
-              <Download size={24} />
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={downloadExcel}
+                disabled={filteredTransactions.length === 0}
+                className="bg-white/20 p-2 rounded-full hover:bg-white/30 transition disabled:opacity-50"
+                title="Download Excel"
+              >
+                <Download size={24} />
+              </button>
+              <ThemeToggle />
+            </div>
           </div>
 
           {/* INPUT TANGGAL (GRID LAYOUT) */}
@@ -250,19 +253,21 @@ export default function StatsPage() {
             </div>
           ) : filteredTransactions.length === 0 ? (
             <div className="text-center py-20">
-              <p className="text-gray-400 text-sm mb-2">
+              <p className="text-gray-400 dark:text-slate-500 text-sm mb-2">
                 No transactions found.
               </p>
-              <p className="text-xs text-gray-300">Try adjusting the dates.</p>
+              <p className="text-xs text-gray-300 dark:text-slate-400">
+                Try adjusting the dates.
+              </p>
             </div>
           ) : (
             <div className="space-y-6 pb-4">
               {/* 1. FINANCIAL SUMMARY */}
-              <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-                <h3 className="font-bold text-gray-800 mb-1 text-center">
+              <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm">
+                <h3 className="font-bold text-gray-800 dark:text-slate-100 mb-1 text-center">
                   Financial Overview
                 </h3>
-                <p className="text-xs text-gray-400 text-center mb-4 font-medium bg-gray-50 inline-block px-3 py-1 rounded-full mx-auto">
+                <p className="text-xs text-gray-400 dark:text-slate-500 text-center mb-4 font-medium bg-gray-50 dark:bg-slate-700 inline-block px-3 py-1 rounded-full mx-auto">
                   {formatDateDisplay(startDate)} - {formatDateDisplay(endDate)}
                 </p>
                 <div className="h-56 w-full">
@@ -284,6 +289,14 @@ export default function StatsPage() {
                         formatter={(value: any) =>
                           `Rp ${value.toLocaleString("id-ID")}`
                         }
+                        contentStyle={{
+                          backgroundColor: "var(--bg-tooltip, #fff)",
+                          border: "1px solid var(--border-tooltip, #e5e7eb)",
+                          borderRadius: "8px",
+                        }}
+                        labelStyle={{
+                          color: "var(--text-tooltip, #000)",
+                        }}
                       />
                       <Legend
                         verticalAlign="bottom"
@@ -297,8 +310,8 @@ export default function StatsPage() {
 
               {/* 2. INCOME CHART */}
               {incomeChartData.length > 0 && (
-                <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-                  <h3 className="font-bold text-gray-800 mb-4 text-center">
+                <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm">
+                  <h3 className="font-bold text-gray-800 dark:text-slate-100 mb-4 text-center">
                     Income Sources
                   </h3>
                   <div className="h-56 w-full">
@@ -326,6 +339,14 @@ export default function StatsPage() {
                           formatter={(value: any) =>
                             `Rp ${value.toLocaleString("id-ID")}`
                           }
+                          contentStyle={{
+                            backgroundColor: "var(--bg-tooltip, #fff)",
+                            border: "1px solid var(--border-tooltip, #e5e7eb)",
+                            borderRadius: "8px",
+                          }}
+                          labelStyle={{
+                            color: "var(--text-tooltip, #000)",
+                          }}
                         />
                         <Legend
                           verticalAlign="bottom"
@@ -349,9 +370,11 @@ export default function StatsPage() {
                                 CATEGORY_COLORS[idx % CATEGORY_COLORS.length],
                             }}
                           ></div>
-                          <span className="text-gray-600">{item.name}</span>
+                          <span className="text-gray-600 dark:text-slate-400">
+                            {item.name}
+                          </span>
                         </div>
-                        <span className="font-bold text-gray-800">
+                        <span className="font-bold text-gray-800 dark:text-slate-100">
                           Rp {item.value.toLocaleString("id-ID")}
                         </span>
                       </div>
@@ -362,8 +385,8 @@ export default function StatsPage() {
 
               {/* 3. EXPENSE CHART */}
               {expenseChartData.length > 0 && (
-                <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-                  <h3 className="font-bold text-gray-800 mb-4 text-center">
+                <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm">
+                  <h3 className="font-bold text-gray-800 dark:text-slate-100 mb-4 text-center">
                     Expense Breakdown
                   </h3>
                   <div className="h-56 w-full">
@@ -391,6 +414,14 @@ export default function StatsPage() {
                           formatter={(value: any) =>
                             `Rp ${value.toLocaleString("id-ID")}`
                           }
+                          contentStyle={{
+                            backgroundColor: "var(--bg-tooltip, #fff)",
+                            border: "1px solid var(--border-tooltip, #e5e7eb)",
+                            borderRadius: "8px",
+                          }}
+                          labelStyle={{
+                            color: "var(--text-tooltip, #000)",
+                          }}
                         />
                         <Legend
                           verticalAlign="bottom"
@@ -414,9 +445,11 @@ export default function StatsPage() {
                                 CATEGORY_COLORS[idx % CATEGORY_COLORS.length],
                             }}
                           ></div>
-                          <span className="text-gray-600">{item.name}</span>
+                          <span className="text-gray-600 dark:text-slate-400">
+                            {item.name}
+                          </span>
                         </div>
-                        <span className="font-bold text-gray-800">
+                        <span className="font-bold text-gray-800 dark:text-slate-100">
                           Rp {item.value.toLocaleString("id-ID")}
                         </span>
                       </div>
@@ -429,22 +462,22 @@ export default function StatsPage() {
         </main>
 
         {/* NAVBAR */}
-        <nav className="flex-none bg-white border-t border-gray-100 py-3 px-17 flex justify-between items-center z-40 shadow-[0_-5px_10px_rgba(0,0,0,0.02)]">
+        <nav className="flex-none bg-white dark:bg-slate-800 border-t border-gray-100 dark:border-slate-700 py-3 px-17 flex justify-between items-center z-40 shadow-[0_-5px_10px_rgba(0,0,0,0.02)] dark:shadow-[0_-5px_10px_rgba(0,0,0,0.3)]">
           <Link
             href="/"
-            className="flex flex-col items-center text-gray-400 hover:text-sky-700 transition-colors"
+            className="flex flex-col items-center text-gray-400 dark:text-slate-400 hover:text-sky-700 dark:hover:text-sky-400 transition-colors"
           >
             <Home size={24} />
             <span className="text-[10px] font-medium mt-1">Home</span>
           </Link>
 
           <div className="relative -top-8 opacity-20 cursor-not-allowed">
-            <div className="bg-gray-400 text-white h-14 w-14 rounded-full flex items-center justify-center">
+            <div className="bg-gray-400 dark:bg-slate-600 text-white h-14 w-14 rounded-full flex items-center justify-center">
               <Plus size={32} />
             </div>
           </div>
 
-          <button className="flex flex-col items-center text-sky-700">
+          <button className="flex flex-col items-center text-sky-700 dark:text-sky-400">
             <PieIcon size={24} />
             <span className="text-[10px] font-medium mt-1">Stats</span>
           </button>
