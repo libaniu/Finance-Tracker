@@ -71,7 +71,7 @@ export default function HomePage() {
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [selectedMonth, setSelectedMonth] = useState(
-    new Date().toISOString().slice(0, 7)
+    new Date().toISOString().slice(0, 7),
   );
 
   // Infinite Scroll Ref
@@ -211,7 +211,7 @@ export default function HomePage() {
         setIsLoadingMore(false);
       }
     },
-    [searchQuery, selectedMonth]
+    [searchQuery, selectedMonth],
   );
 
   // Initial Load
@@ -232,13 +232,18 @@ export default function HomePage() {
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && hasMore && !isLoadingMore && !isLoading) {
+        if (
+          entries[0].isIntersecting &&
+          hasMore &&
+          !isLoadingMore &&
+          !isLoading
+        ) {
           const nextPage = page + 1;
           setPage(nextPage);
           fetchTransactions(nextPage, false);
         }
       },
-      { threshold: 0.5 }
+      { threshold: 0.5 },
     );
 
     if (observerTarget.current) {
@@ -298,7 +303,7 @@ export default function HomePage() {
     if (value > summary.income) {
       showToast(
         `Budget melebihi Income (${formatCurrency(summary.income)})`,
-        "error"
+        "error",
       );
       return;
     }
@@ -564,9 +569,10 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* --- FILTER ROW --- */}
-          <div className="flex items-center justify-between gap-4 mb-6">
-            <div className="relative flex-1 min-w-0">
+          {/* --- FILTER ROW (DIPERBAIKI DENGAN GRID) --- */}
+          <div className="grid grid-cols-5 gap-3 mb-6">
+            {/* 1. INPUT BULAN (Mengambil 3 dari 5 bagian lebar) */}
+            <div className="relative col-span-3">
               <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-slate-400 pointer-events-none">
                 <Filter size={14} />
               </div>
@@ -574,17 +580,19 @@ export default function HomePage() {
                 type="month"
                 value={selectedMonth}
                 onChange={(e) => setSelectedMonth(e.target.value)}
-                className="w-full bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-300 text-xs font-semibold pl-9 pr-3 py-2.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-100 dark:focus:ring-sky-700 shadow-sm [&::-webkit-calendar-picker-indicator]:opacity-100 [&::-webkit-calendar-picker-indicator]:brightness-0 dark:[&::-webkit-calendar-picker-indicator]:invert"
+                className="w-full bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-300 text-xs font-semibold pl-9 pr-2 py-2.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-100 dark:focus:ring-sky-700 shadow-sm [&::-webkit-calendar-picker-indicator]:opacity-100 [&::-webkit-calendar-picker-indicator]:brightness-0 dark:[&::-webkit-calendar-picker-indicator]:invert"
               />
             </div>
-            <div className="relative shrink-0">
+
+            {/* 2. SELECT SORT (Mengambil 2 dari 5 bagian lebar) */}
+            <div className="relative col-span-2">
               <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-slate-400 pointer-events-none">
                 <ArrowUpDown size={14} />
               </div>
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="appearance-none w-full bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-300 text-xs font-semibold pl-9 pr-8 py-2.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-100 dark:focus:ring-sky-700 shadow-sm"
+                className="appearance-none w-full bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-300 text-xs font-semibold pl-9 pr-8 py-2.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-100 dark:focus:ring-sky-700 shadow-sm truncate"
               >
                 <option value="date-desc">Newest</option>
                 <option value="date-asc">Oldest</option>
@@ -816,7 +824,7 @@ export default function HomePage() {
                 value={
                   tempBudget
                     ? new Intl.NumberFormat("id-ID").format(
-                        Number(tempBudget.replace(/\D/g, ""))
+                        Number(tempBudget.replace(/\D/g, "")),
                       )
                     : ""
                 }
