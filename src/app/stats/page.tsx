@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import ThemeToggle from "@/components/ThemeToggle";
 import {
   PieChart as PieIcon,
   Home,
@@ -213,7 +212,6 @@ export default function StatsPage() {
               >
                 <Download size={24} />
               </button>
-              <ThemeToggle />
             </div>
           </div>
 

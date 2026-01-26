@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
-import ThemeToggle from "@/components/ThemeToggle";
 import {
   PieChart,
   Plus,
@@ -368,8 +367,6 @@ export default function HomePage() {
               >
                 <Settings size={20} />
               </button>
-
-              <ThemeToggle />
             </div>
           </div>
 
