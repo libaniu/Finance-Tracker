@@ -24,20 +24,21 @@ import {
   AlertCircle,
   ChevronDown,
   Filter,
-  // --- ICON BARU UNTUK KATEGORI ---
-  Utensils,     // Food
-  Car,          // Transport
-  ShoppingBag,  // Shopping
-  Zap,          // Bills
-  Film,         // Entertainment
-  HeartPulse,   // Health
-  TrendingUp,   // Invest
-  MoreHorizontal,// Others
-  Banknote,     // Salary
-  Gift,         // Bonus
-  Wallet,
+  // --- ICON UPDATE ---
   CircleArrowUp,
-  CircleArrowDown,       // Fallback
+  CircleArrowDown,
+  // --- ICON KATEGORI ---
+  Utensils,
+  Car,
+  ShoppingBag,
+  Zap,
+  Film,
+  HeartPulse,
+  TrendingUp,
+  MoreHorizontal,
+  Banknote,
+  Gift,
+  Wallet,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
@@ -78,7 +79,7 @@ const getCategoryIcon = (category: string, type: "income" | "expense") => {
       case "Salary": return <Banknote size={20} />;
       case "Bonus": return <Gift size={20} />;
       case "Investment": return <TrendingUp size={20} />;
-      default: return <Wallet size={20} />;
+      default: return <CircleArrowUp size={20} />;
     }
   } else {
     switch (category) {
@@ -101,7 +102,6 @@ const getGroupHeaderDate = (dateString: string) => {
   const yesterday = new Date();
   yesterday.setDate(today.getDate() - 1);
 
-  // Reset jam untuk komparasi tanggal murni
   date.setHours(0,0,0,0);
   today.setHours(0,0,0,0);
   yesterday.setHours(0,0,0,0);
@@ -124,34 +124,28 @@ export default function HomePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
 
-  // Pagination & Filter State
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [selectedMonth, setSelectedMonth] = useState(
     new Date().toISOString().slice(0, 7)
   );
 
-  // Infinite Scroll Ref
   const observerTarget = useRef<HTMLDivElement>(null);
 
-  // Budget & AI States
   const [monthlyBudget, setMonthlyBudget] = useState(0);
   const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false);
   const [tempBudget, setTempBudget] = useState("");
 
-  // AI ADVISOR STATES
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [aiAdvice, setAiAdvice] = useState("");
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
 
-  // UI States
   const [sortBy, setSortBy] = useState("date-desc");
   const [searchQuery, setSearchQuery] = useState("");
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
 
-  // Modal States
   const [deleteModal, setDeleteModal] = useState<{
     show: boolean;
     id: number | null;
@@ -175,7 +169,6 @@ export default function HomePage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  // 1. Fetch Summary
   const fetchSummary = useCallback(async () => {
     try {
       let query = supabase.from("transactions").select("amount, type");
@@ -211,7 +204,6 @@ export default function HomePage() {
     }
   }, [selectedMonth]);
 
-  // 2. Fetch Transactions
   const fetchTransactions = useCallback(
     async (pageNum: number, isRefresh = false) => {
       try {
@@ -282,7 +274,6 @@ export default function HomePage() {
     fetchTransactions(0, true);
   }, [searchQuery, selectedMonth, fetchTransactions, fetchSummary]);
 
-  // --- INFINITE SCROLL LOGIC ---
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -482,6 +473,11 @@ export default function HomePage() {
   const displayAmount = formData.amount
     ? new Intl.NumberFormat("id-ID").format(Number(formData.amount))
     : "";
+  const formatDate = (dateString: string) =>
+    new Date(dateString).toLocaleDateString("en-GB", {
+      day: "numeric",
+      month: "short",
+    });
   const formatFullDate = (dateString: string) =>
     new Date(dateString).toLocaleDateString("en-GB", {
       day: "numeric",
@@ -502,7 +498,7 @@ export default function HomePage() {
         <header className="flex-none bg-sky-700 dark:bg-sky-800 px-6 pt-8 pb-10 rounded-b-[2.5rem] text-white relative z-10 shadow-md">
           <div className="flex justify-between items-center mb-6">
             <div>
-              <p className="text-sky-100 text-base mb-1">Total Balance</p>
+              <p className="text-sky-100 text-sm mb-1">Total Balance</p>
               <h1 className="text-3xl font-bold">
                 {isLoading ? (
                   <div className="h-9 w-32 bg-sky-600/50 dark:bg-sky-500/50 rounded animate-pulse"></div>
@@ -549,7 +545,7 @@ export default function HomePage() {
                 <p className="text-[10px] text-gray-500 dark:text-slate-400">
                   Income
                 </p>
-                <p className="font-bold text-xs sm:text-base text-green-600 dark:text-green-400 truncate">
+                <p className="font-bold text-xs sm:text-sm text-green-600 dark:text-green-400 truncate">
                   {isLoading ? "..." : formatCurrency(summary.income)}
                 </p>
               </div>
@@ -563,7 +559,7 @@ export default function HomePage() {
                 <p className="text-[10px] text-gray-500 dark:text-slate-400">
                   Expense
                 </p>
-                <p className="font-bold text-xs sm:text-base text-red-600 dark:text-red-400 truncate">
+                <p className="font-bold text-xs sm:text-sm text-red-600 dark:text-red-400 truncate">
                   {isLoading ? "..." : formatCurrency(summary.expense)}
                 </p>
               </div>
@@ -645,7 +641,7 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* --- LIST TRANSACTIONS (WITH SMART GROUPING) --- */}
+          {/* LIST TRANSACTIONS */}
           {isLoading && page === 0 ? (
             <div className="space-y-3 pb-4">
               {[...Array(5)].map((_, i) => (
@@ -665,20 +661,18 @@ export default function HomePage() {
               ))}
             </div>
           ) : processedTransactions.length === 0 ? (
-            <div className="text-center py-10 text-gray-400 dark:text-slate-500 text-base">
+            <div className="text-center py-10 text-gray-400 dark:text-slate-500 text-sm">
               No transactions found in {selectedMonth || "this period"}.
             </div>
           ) : (
             <div className="space-y-3 pb-4">
               {processedTransactions.map((item, index) => {
-                // LOGIC GROUPING TANGGAL
                 const currentDate = item.date.split("T")[0];
                 const prevDate = index > 0 ? processedTransactions[index - 1].date.split("T")[0] : null;
                 const isNewGroup = currentDate !== prevDate;
 
                 return (
                   <div key={item.id}>
-                    {/* Render Header Jika Tanggal Berubah */}
                     {isNewGroup && (
                       <div className="mt-6 mb-3 flex items-center gap-3">
                         <div className="h-px bg-gray-200 dark:bg-slate-700 flex-1"></div>
@@ -689,13 +683,11 @@ export default function HomePage() {
                       </div>
                     )}
 
-                    {/* Render Item Transaksi */}
                     <div
                       onClick={() => setDetailModal(item)}
                       className="relative flex items-center justify-between bg-white dark:bg-slate-800 p-4 rounded-2xl border border-gray-50 dark:border-slate-700 shadow-sm hover:shadow-md dark:hover:shadow-slate-900 transition-all group active:scale-[0.98] cursor-pointer mb-3"
                     >
                       <div className="flex items-center gap-4 flex-1 min-w-0 pr-2">
-                        {/* ICON DINAMIS */}
                         <div
                           className={`w-12 h-12 flex items-center justify-center rounded-full shrink-0 ${
                             item.type === "income"
@@ -706,7 +698,7 @@ export default function HomePage() {
                           {getCategoryIcon(item.category, item.type)}
                         </div>
                         <div className="flex flex-col min-w-0">
-                          <h3 className="font-bold text-gray-900 dark:text-slate-100 text-base truncate leading-tight mb-1">
+                          <h3 className="font-bold text-gray-900 dark:text-slate-100 text-sm truncate leading-tight mb-1">
                             {item.title}
                           </h3>
                           <div className="flex items-center gap-1.5 text-xs text-gray-400 dark:text-slate-500">
@@ -718,7 +710,7 @@ export default function HomePage() {
                       </div>
                       <div className="flex flex-col items-end gap-1 shrink-0">
                         <p
-                          className={`font-bold text-base whitespace-nowrap ${
+                          className={`font-bold text-sm whitespace-nowrap ${
                             item.type === "income"
                               ? "text-green-600 dark:text-green-400"
                               : "text-gray-900 dark:text-slate-100"
@@ -727,13 +719,13 @@ export default function HomePage() {
                           {item.type === "expense" && "- "}
                           {formatCurrency(item.amount)}
                         </p>
-                        <div className="flex items-center gap-1 transition-opacity">
+                        <div className="flex items-center gap-1">
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
                               handleEdit(item);
                             }}
-                            className="text-gray-300 dark:text-slate-400 hover:text-sky-700 dark:hover:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-900 p-1.5 rounded-lg transition-colors"
+                            className="text-gray-400 dark:text-slate-400 hover:text-sky-700 dark:hover:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-900 p-1.5 rounded-lg transition-colors"
                           >
                             <Pencil size={14} />
                           </button>
@@ -742,7 +734,7 @@ export default function HomePage() {
                               e.stopPropagation();
                               setDeleteModal({ show: true, id: item.id });
                             }}
-                            className="text-gray-300 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900 p-1.5 rounded-lg transition-colors"
+                            className="text-gray-400 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900 p-1.5 rounded-lg transition-colors"
                           >
                             <Trash2 size={14} />
                           </button>
@@ -759,7 +751,7 @@ export default function HomePage() {
                   className="w-full py-4 flex justify-center items-center"
                 >
                   {isLoadingMore && (
-                    <div className="flex items-center gap-2 text-base text-gray-400 dark:text-slate-500">
+                    <div className="flex items-center gap-2 text-sm text-gray-400 dark:text-slate-500">
                       <Loader2 size={16} className="animate-spin" />
                       Loading more...
                     </div>
@@ -798,13 +790,14 @@ export default function HomePage() {
           </Link>
         </nav>
 
+        {/* --- AI ADVISOR MODAL --- */}
         {isAiModalOpen && (
           <div
-            className="absolute inset-0 z-90 flex items-center justify-center px-4 bg-black/60 backdrop-blur-sm"
+            className="absolute inset-0 z-100 flex items-center justify-center px-4 bg-black/60 backdrop-blur-sm"
             onClick={() => setIsAiModalOpen(false)}
           >
             <div
-              className="bg-white dark:bg-slate-800 w-full max-w-sm rounded-3xl p-6 relative animate-in zoom-in-95 duration-300 shadow-2xl flex flex-col max-h-[85vh]"
+              className="bg-white dark:bg-slate-800 w-full max-w-sm rounded-3xl p-6 relative animate-in zoom-in-95 duration-300 shadow-2xl flex flex-col max-h-[80vh]"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center gap-3 mb-4 border-b border-gray-100 dark:border-slate-700 pb-4 shrink-0">
@@ -826,7 +819,7 @@ export default function HomePage() {
                   <X size={20} />
                 </button>
               </div>
-              <div className="overflow-y-auto text-base text-gray-700 dark:text-slate-300 leading-relaxed space-y-4 whitespace-pre-wrap pr-2 mb-4 custom-scrollbar">
+              <div className="flex-1 min-h-0 overflow-y-auto text-sm text-gray-700 dark:text-slate-300 leading-relaxed space-y-4 whitespace-pre-wrap pr-2 mb-4 custom-scrollbar">
                 <ReactMarkdown
                   components={{
                     strong: ({ node, ...props }) => (
@@ -862,6 +855,7 @@ export default function HomePage() {
           </div>
         )}
 
+        {/* --- BUDGET MODAL --- */}
         {isBudgetModalOpen && (
           <div
             className="absolute inset-0 z-80 flex items-center justify-center px-4 bg-black/60 backdrop-blur-sm"
@@ -905,6 +899,7 @@ export default function HomePage() {
           </div>
         )}
 
+        {/* TOAST */}
         {toast.show && (
           <div
             className={`fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-90 transition-all duration-300 ${
@@ -925,7 +920,7 @@ export default function HomePage() {
               ) : (
                 <AlertCircle size={18} />
               )}
-              <span className="text-base font-medium">{toast.message}</span>
+              <span className="text-sm font-medium">{toast.message}</span>
             </div>
           </div>
         )}
@@ -956,7 +951,7 @@ export default function HomePage() {
                   <span className="text-gray-400 dark:text-slate-400 text-xs font-medium">
                     Title
                   </span>
-                  <span className="text-gray-800 dark:text-slate-100 text-base font-bold text-right max-w-37.5 wrap-break-word">
+                  <span className="text-gray-800 dark:text-slate-100 text-sm font-bold text-right max-w-37.5 wrap-break-word">
                     {detailModal.title}
                   </span>
                 </div>
@@ -966,7 +961,7 @@ export default function HomePage() {
                     <Tag size={14} />
                     <span className="text-xs font-medium">Category</span>
                   </div>
-                  <span className="text-gray-800 dark:text-slate-100 text-base font-semibold">
+                  <span className="text-gray-800 dark:text-slate-100 text-sm font-semibold">
                     {detailModal.category || "-"}
                   </span>
                 </div>
@@ -975,8 +970,8 @@ export default function HomePage() {
                     <Calendar size={14} />
                     <span className="text-xs font-medium">Date</span>
                   </div>
-                  <span className="text-gray-800 dark:text-slate-100 text-base font-semibold">
-                    {getGroupHeaderDate(detailModal.date)}
+                  <span className="text-gray-800 dark:text-slate-100 text-sm font-semibold">
+                    {formatFullDate(detailModal.date)}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
@@ -984,14 +979,14 @@ export default function HomePage() {
                     <Clock size={14} />
                     <span className="text-xs font-medium">Time</span>
                   </div>
-                  <span className="text-gray-800 dark:text-slate-100 text-base font-semibold">
+                  <span className="text-gray-800 dark:text-slate-100 text-sm font-semibold">
                     {formatTime(detailModal.date)}
                   </span>
                 </div>
               </div>
               <button
                 onClick={() => setDetailModal(null)}
-                className="mt-6 w-full bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-100 py-3 rounded-xl font-bold text-base hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
+                className="mt-6 w-full bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-100 py-3 rounded-xl font-bold text-sm hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
               >
                 Close
               </button>
@@ -1057,14 +1052,14 @@ export default function HomePage() {
                     onClick={() =>
                       setFormData({ ...formData, type: "expense" })
                     }
-                    className={`py-2.5 rounded-xl font-medium text-base transition-all ${formData.type === "expense" ? "bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-400 border-2 border-red-200 dark:border-red-800" : "bg-gray-50 dark:bg-slate-700 text-gray-400 dark:text-slate-500"}`}
+                    className={`py-2.5 rounded-xl font-medium text-sm transition-all ${formData.type === "expense" ? "bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-400 border-2 border-red-200 dark:border-red-800" : "bg-gray-50 dark:bg-slate-700 text-gray-400 dark:text-slate-500"}`}
                   >
                     Expense
                   </button>
                   <button
                     type="button"
                     onClick={() => setFormData({ ...formData, type: "income" })}
-                    className={`py-2.5 rounded-xl font-medium text-base transition-all ${formData.type === "income" ? "bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-400 border-2 border-green-200 dark:border-green-800" : "bg-gray-50 dark:bg-slate-700 text-gray-400 dark:text-slate-500"}`}
+                    className={`py-2.5 rounded-xl font-medium text-sm transition-all ${formData.type === "income" ? "bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-400 border-2 border-green-200 dark:border-green-800" : "bg-gray-50 dark:bg-slate-700 text-gray-400 dark:text-slate-500"}`}
                   >
                     Income
                   </button>
