@@ -569,10 +569,10 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* --- FILTER ROW (DIPERBAIKI DENGAN GRID) --- */}
-          <div className="grid grid-cols-5 gap-3 mb-6">
-            {/* 1. INPUT BULAN (Mengambil 3 dari 5 bagian lebar) */}
-            <div className="relative col-span-3">
+          {/* --- FILTER ROW (JURUS PAMUNGKAS: FIXED WIDTH) --- */}
+          <div className="flex flex-row gap-2 mb-6 w-full">
+            {/* 1. INPUT BULAN (Ambil 65% Lebar) */}
+            <div className="relative w-[65%]">
               <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-slate-400 pointer-events-none">
                 <Filter size={14} />
               </div>
@@ -580,19 +580,19 @@ export default function HomePage() {
                 type="month"
                 value={selectedMonth}
                 onChange={(e) => setSelectedMonth(e.target.value)}
-                className="w-full bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-300 text-xs font-semibold pl-9 pr-2 py-2.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-100 dark:focus:ring-sky-700 shadow-sm [&::-webkit-calendar-picker-indicator]:opacity-100 [&::-webkit-calendar-picker-indicator]:brightness-0 dark:[&::-webkit-calendar-picker-indicator]:invert"
+                className="w-full bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-300 text-xs font-semibold pl-9 pr-2 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-100 dark:focus:ring-sky-700 shadow-sm appearance-none min-w-0 [&::-webkit-calendar-picker-indicator]:opacity-100 [&::-webkit-calendar-picker-indicator]:brightness-0 dark:[&::-webkit-calendar-picker-indicator]:invert"
               />
             </div>
 
-            {/* 2. SELECT SORT (Mengambil 2 dari 5 bagian lebar) */}
-            <div className="relative col-span-2">
+            {/* 2. SELECT SORT (Ambil 35% Lebar) */}
+            <div className="relative w-[35%]">
               <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-slate-400 pointer-events-none">
                 <ArrowUpDown size={14} />
               </div>
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="appearance-none w-full bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-300 text-xs font-semibold pl-9 pr-8 py-2.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-100 dark:focus:ring-sky-700 shadow-sm truncate"
+                className="appearance-none w-full bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-300 text-xs font-semibold pl-9 pr-8 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-100 dark:focus:ring-sky-700 shadow-sm truncate"
               >
                 <option value="date-desc">Newest</option>
                 <option value="date-asc">Oldest</option>
@@ -604,7 +604,7 @@ export default function HomePage() {
               </div>
             </div>
           </div>
-
+          
           {/* LIST TRANSACTIONS */}
           {isLoading && page === 0 ? (
             <div className="space-y-3 pb-4">
