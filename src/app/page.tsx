@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import ReactMarkdown from "react-markdown";
 import {
   PieChart,
@@ -25,6 +25,8 @@ import {
   Sparkles,
   Home,
   AlertCircle,
+  ChevronDown,
+  Filter, // Icon baru
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
@@ -56,12 +58,22 @@ const EXPENSE_CATEGORIES = [
 ];
 const INCOME_CATEGORIES = ["Salary", "Bonus", "Gift", "Investment", "Others"];
 
+const ITEMS_PER_PAGE = 20;
+
 export default function HomePage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [totalBalance, setTotalBalance] = useState(0);
-  const [income, setIncome] = useState(0);
-  const [expense, setExpense] = useState(0);
+  const [summary, setSummary] = useState({ income: 0, expense: 0, balance: 0 });
+
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+
+  // Pagination & Filter State
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  // Default: Bulan Ini (Format YYYY-MM)
+  const [selectedMonth, setSelectedMonth] = useState(
+    new Date().toISOString().slice(0, 7),
+  );
 
   // Budget & AI States
   const [monthlyBudget, setMonthlyBudget] = useState(0);
@@ -100,57 +112,142 @@ export default function HomePage() {
     type: "expense" as "income" | "expense",
   });
 
+  // 1. Fetch Summary (Kini mengikuti Filter Bulan agar Sinkron)
+  const fetchSummary = useCallback(async () => {
+    try {
+      let query = supabase.from("transactions").select("amount, type");
+
+      // Apply Month Filter to Summary too
+      if (selectedMonth) {
+        const [year, month] = selectedMonth.split("-");
+        const startDate = `${year}-${month}-01`;
+        // Hack: Tanggal 31 biar aman cover semua bulan
+        const endDate = new Date(parseInt(year), parseInt(month), 0)
+          .toISOString()
+          .split("T")[0];
+
+        query = query.gte("date", startDate).lte("date", `${endDate}T23:59:59`);
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+
+      let inc = 0;
+      let exp = 0;
+      data?.forEach((item: any) => {
+        if (item.type === "income") inc += item.amount;
+        else exp += item.amount;
+      });
+
+      setSummary({
+        income: inc,
+        expense: exp,
+        balance: inc - exp,
+      });
+    } catch (error) {
+      console.error("Error fetching summary:", error);
+    }
+  }, [selectedMonth]);
+
+  // 2. Fetch Transactions (Paginated + Filtered)
+  const fetchTransactions = useCallback(
+    async (pageNum: number, isRefresh = false) => {
+      try {
+        if (pageNum === 0) setIsLoading(true);
+        else setIsLoadingMore(true);
+
+        const from = pageNum * ITEMS_PER_PAGE;
+        const to = from + ITEMS_PER_PAGE - 1;
+
+        let query = supabase
+          .from("transactions")
+          .select("*")
+          .order("date", { ascending: false })
+          .range(from, to);
+
+        // --- FILTER: MONTH ---
+        if (selectedMonth) {
+          const [year, month] = selectedMonth.split("-");
+          const startDate = `${year}-${month}-01`;
+          const endDate = new Date(parseInt(year), parseInt(month), 0)
+            .toISOString()
+            .split("T")[0];
+
+          query = query
+            .gte("date", startDate)
+            .lte("date", `${endDate}T23:59:59`);
+        }
+
+        // --- FILTER: SEARCH ---
+        if (searchQuery) {
+          query = query.ilike("title", `%${searchQuery}%`);
+        }
+
+        const { data, error } = await query;
+
+        if (error) throw error;
+
+        if (data) {
+          if (isRefresh || pageNum === 0) {
+            setTransactions(data);
+          } else {
+            setTransactions((prev) => [...prev, ...data]);
+          }
+
+          if (data.length < ITEMS_PER_PAGE) {
+            setHasMore(false);
+          } else {
+            setHasMore(true);
+          }
+        }
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setIsLoading(false);
+        setIsLoadingMore(false);
+      }
+    },
+    [searchQuery, selectedMonth],
+  );
+
+  // Initial Load & Effect saat Filter Berubah
   useEffect(() => {
-    fetchTransactions();
     const savedBudget = localStorage.getItem("monthlyBudget");
     if (savedBudget) setMonthlyBudget(Number(savedBudget));
   }, []);
 
-  const fetchTransactions = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("transactions")
-        .select("*")
-        .order("date", { ascending: false });
-      if (error) throw error;
-      if (data) {
-        setTransactions(data);
-        calculateSummary(data);
-      }
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // Trigger ulang saat Search atau Bulan berubah
+  useEffect(() => {
+    setPage(0);
+    setHasMore(true);
+    fetchSummary();
+    fetchTransactions(0, true);
+  }, [searchQuery, selectedMonth, fetchTransactions, fetchSummary]);
 
-  const calculateSummary = (data: Transaction[]) => {
-    let inc = 0;
-    let exp = 0;
-    data.forEach((item) => {
-      if (item.type === "income") inc += item.amount;
-      else exp += item.amount;
-    });
-    setIncome(inc);
-    setExpense(exp);
-    setTotalBalance(inc - exp);
+  const handleLoadMore = () => {
+    const nextPage = page + 1;
+    setPage(nextPage);
+    fetchTransactions(nextPage, false);
   };
 
   // --- AI ADVISOR LOGIC ---
   const handleAskAI = async () => {
     setIsAnalyzing(true);
     try {
-      const topExpenses = transactions
-        .filter((t) => t.type === "expense")
-        .sort((a, b) => b.amount - a.amount)
-        .slice(0, 5);
+      const { data: topExpenses } = await supabase
+        .from("transactions")
+        .select("*")
+        .eq("type", "expense")
+        .order("amount", { ascending: false })
+        .limit(5);
 
       const response = await fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          transactions: topExpenses,
-          summary: { income, expense, balance: totalBalance },
+          transactions: topExpenses || [],
+          summary: summary,
         }),
       });
 
@@ -180,8 +277,11 @@ export default function HomePage() {
   const saveBudget = () => {
     const value = Number(tempBudget.replace(/\D/g, ""));
 
-    if (value > income) {
-      showToast(`Budget melebihi Income (${formatCurrency(income)})`, "error");
+    if (value > summary.income) {
+      showToast(
+        `Budget melebihi Income (${formatCurrency(summary.income)})`,
+        "error",
+      );
       return;
     }
 
@@ -192,35 +292,32 @@ export default function HomePage() {
   };
 
   const budgetPercentage =
-    monthlyBudget > 0 ? Math.min((expense / monthlyBudget) * 100, 100) : 0;
+    monthlyBudget > 0
+      ? Math.min((summary.expense / monthlyBudget) * 100, 100)
+      : 0;
   let progressColor = "bg-sky-700";
   if (budgetPercentage > 50) progressColor = "bg-yellow-500";
   if (budgetPercentage > 85) progressColor = "bg-red-500";
 
-  const processedTransactions = transactions
-    .filter((item) =>
-      item.title.toLowerCase().includes(searchQuery.toLowerCase()),
-    )
-    .sort((a, b) => {
-      switch (sortBy) {
-        case "date-desc":
-          return (
-            new Date(b.date).getTime() - new Date(a.date).getTime() ||
-            b.id - a.id
-          );
-        case "date-asc":
-          return (
-            new Date(a.date).getTime() - new Date(b.date).getTime() ||
-            a.id - b.id
-          );
-        case "amount-high":
-          return b.amount - a.amount;
-        case "amount-low":
-          return a.amount - b.amount;
-        default:
-          return 0;
-      }
-    });
+  // Sorting Local
+  const processedTransactions = [...transactions].sort((a, b) => {
+    switch (sortBy) {
+      case "date-desc":
+        return (
+          new Date(b.date).getTime() - new Date(a.date).getTime() || b.id - a.id
+        );
+      case "date-asc":
+        return (
+          new Date(a.date).getTime() - new Date(b.date).getTime() || a.id - b.id
+        );
+      case "amount-high":
+        return b.amount - a.amount;
+      case "amount-low":
+        return a.amount - b.amount;
+      default:
+        return 0;
+    }
+  });
 
   const handleEdit = (item: Transaction) => {
     setEditingId(item.id);
@@ -276,7 +373,9 @@ export default function HomePage() {
         showToast("Transaction saved!", "success");
       }
       resetForm();
-      fetchTransactions();
+      fetchSummary();
+      setPage(0);
+      fetchTransactions(0, true);
     } catch (error) {
       showToast("Failed to save.", "error");
     } finally {
@@ -292,7 +391,10 @@ export default function HomePage() {
         .delete()
         .eq("id", deleteModal.id);
       if (error) throw error;
-      fetchTransactions();
+
+      fetchSummary();
+      setTransactions((prev) => prev.filter((t) => t.id !== deleteModal.id));
+
       showToast("Deleted successfully.", "success");
     } catch (error) {
       showToast("Failed to delete.", "error");
@@ -337,11 +439,15 @@ export default function HomePage() {
             <div>
               <p className="text-sky-100 text-sm mb-1">Total Balance</p>
               <h1 className="text-3xl font-bold">
-                {isLoading ? "..." : formatCurrency(totalBalance)}
+                {isLoading ? (
+                  <div className="h-9 w-32 bg-sky-600/50 dark:bg-sky-500/50 rounded animate-pulse"></div>
+                ) : (
+                  formatCurrency(summary.balance)
+                )}
               </h1>
             </div>
 
-            {/* ACTION BUTTONS: BUDGET & AI */}
+            {/* ACTION BUTTONS */}
             <div className="flex items-center gap-2">
               <button
                 onClick={handleAskAI}
@@ -380,7 +486,7 @@ export default function HomePage() {
                   Income
                 </p>
                 <p className="font-bold text-xs sm:text-sm text-green-600 dark:text-green-400 truncate">
-                  {isLoading ? "..." : formatCurrency(income)}
+                  {isLoading ? "..." : formatCurrency(summary.income)}
                 </p>
               </div>
             </div>
@@ -394,7 +500,7 @@ export default function HomePage() {
                   Expense
                 </p>
                 <p className="font-bold text-xs sm:text-sm text-red-600 dark:text-red-400 truncate">
-                  {isLoading ? "..." : formatCurrency(expense)}
+                  {isLoading ? "..." : formatCurrency(summary.expense)}
                 </p>
               </div>
             </div>
@@ -420,7 +526,7 @@ export default function HomePage() {
                 ></div>
               </div>
               <div className="flex justify-between mt-2 text-[10px] text-gray-400 dark:text-slate-500">
-                <span>Used: {formatCurrency(expense)}</span>
+                <span>Used: {formatCurrency(summary.expense)}</span>
                 <span>Limit: {formatCurrency(monthlyBudget)}</span>
               </div>
             </div>
@@ -442,10 +548,20 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-bold text-gray-800 dark:text-slate-100">
-              Recent Transactions
-            </h2>
+          {/* --- FILTER ROW (BARU) --- */}
+          <div className="flex items-center gap-3 mb-4">
+            <div className="flex-1 relative">
+              <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-slate-400 pointer-events-none">
+                <Filter size={14} />
+              </div>
+              <input
+                type="month"
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(e.target.value)}
+                className="w-full bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-300 text-xs font-semibold pl-9 pr-4 py-2 rounded-full focus:outline-none focus:ring-2 focus:ring-sky-100 dark:focus:ring-sky-700 shadow-sm [&::-webkit-calendar-picker-indicator]:opacity-50 [&::-webkit-calendar-picker-indicator]:brightness-0 dark:[&::-webkit-calendar-picker-indicator]:invert"
+              />
+            </div>
+
             <div className="relative">
               <ArrowUpDown
                 size={14}
@@ -454,27 +570,38 @@ export default function HomePage() {
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="appearance-none bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-300 text-xs font-semibold pl-8 pr-4 py-2 rounded-full focus:outline-none focus:ring-2 focus:ring-sky-100 dark:focus:ring-sky-700 shadow-sm"
+                className="appearance-none bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-300 text-xs font-semibold pl-8 pr-8 py-2 rounded-full focus:outline-none focus:ring-2 focus:ring-sky-100 dark:focus:ring-sky-700 shadow-sm"
               >
-                <option value="date-desc">Newest</option>{" "}
-                <option value="date-asc">Oldest</option>{" "}
-                <option value="amount-high">Highest</option>{" "}
+                <option value="date-desc">Newest</option>
+                <option value="date-asc">Oldest</option>
+                <option value="amount-high">Highest</option>
                 <option value="amount-low">Lowest</option>
               </select>
             </div>
           </div>
 
-          {isLoading ? (
-            <div className="flex justify-center py-10">
-              <Loader2 className="animate-spin text-sky-700" />
-            </div>
-          ) : transactions.length === 0 ? (
-            <div className="text-center py-10 text-gray-400 dark:text-slate-500 text-sm">
-              No transactions yet.
+          {/* LIST TRANSACTIONS */}
+          {isLoading && page === 0 ? (
+            <div className="space-y-3 pb-4">
+              {[...Array(5)].map((_, i) => (
+                <div
+                  key={i}
+                  className="flex items-center justify-between bg-white dark:bg-slate-800 p-4 rounded-2xl border border-gray-50 dark:border-slate-700 shadow-sm animate-pulse"
+                >
+                  <div className="flex items-center gap-4 flex-1">
+                    <div className="w-12 h-12 bg-gray-200 dark:bg-slate-700 rounded-full shrink-0"></div>
+                    <div className="space-y-2 flex-1">
+                      <div className="h-4 bg-gray-200 dark:bg-slate-700 rounded w-1/3"></div>
+                      <div className="h-3 bg-gray-100 dark:bg-slate-700 rounded w-1/4"></div>
+                    </div>
+                  </div>
+                  <div className="w-16 h-4 bg-gray-200 dark:bg-slate-700 rounded"></div>
+                </div>
+              ))}
             </div>
           ) : processedTransactions.length === 0 ? (
             <div className="text-center py-10 text-gray-400 dark:text-slate-500 text-sm">
-              No transaction found for "{searchQuery}".
+              No transactions found in {selectedMonth || "this period"}.
             </div>
           ) : (
             <div className="space-y-3 pb-4">
@@ -539,11 +666,31 @@ export default function HomePage() {
                   </div>
                 </div>
               ))}
+
+              {/* LOAD MORE BUTTON */}
+              {hasMore && (
+                <button
+                  onClick={handleLoadMore}
+                  disabled={isLoadingMore}
+                  className="w-full py-4 text-sm font-semibold text-gray-500 dark:text-slate-400 hover:text-sky-600 dark:hover:text-sky-400 transition-colors flex items-center justify-center gap-2"
+                >
+                  {isLoadingMore ? (
+                    <>
+                      <Loader2 size={16} className="animate-spin" />
+                      Loading more...
+                    </>
+                  ) : (
+                    <>
+                      Load More Transactions <ChevronDown size={16} />
+                    </>
+                  )}
+                </button>
+              )}
             </div>
           )}
         </main>
 
-        <nav className="flex-none bg-white dark:bg-slate-800 border-t border-gray-100 dark:border-slate-700 py-3 px-17 flex justify-between items-center z-40 shadow-[0_-5px_10px_rgba(0,0,0,0.02)] dark:shadow-[0_-5px_10px_rgba(0,0,0,0.3)]">
+        <nav className="flex-none bg-white dark:bg-slate-800 border-t border-gray-100 dark:border-slate-700 py-3 px-15 flex justify-between items-center z-40 shadow-[0_-5px_10px_rgba(0,0,0,0.02)] dark:shadow-[0_-5px_10px_rgba(0,0,0,0.3)]">
           <Link
             href="/"
             className="flex flex-col items-center text-sky-700 dark:text-sky-400"
@@ -557,7 +704,7 @@ export default function HomePage() {
                 resetForm();
                 setIsDrawerOpen(true);
               }}
-              className="bg-sky-700 dark:bg-sky-800 text-white h-14 w-14 rounded-full shadow-lg shadow-sky-700/40 dark:shadow-sky-800/40 flex items-center justify-center transform active:scale-95 transition-all hover:bg-sky-800 dark:hover:bg-sky-700"
+              className="bg-sky-700 dark:bg-sky-800 text-white h-14 w-14 rounded-full shadow-lg shadow-sky-700/40 dark:shadow-sky-800/40 flex items-center justify-center transform transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-sky-700/50 active:scale-90"
             >
               <Plus size={32} />
             </button>
@@ -581,7 +728,6 @@ export default function HomePage() {
               className="bg-white dark:bg-slate-800 w-full max-w-sm rounded-3xl p-6 relative animate-in zoom-in-95 duration-300 shadow-2xl flex flex-col max-h-[85vh]"
               onClick={(e) => e.stopPropagation()}
             >
-              {/* HEADER */}
               <div className="flex items-center gap-3 mb-4 border-b border-gray-100 dark:border-slate-700 pb-4 shrink-0">
                 <div className="bg-linear-to-tr from-sky-700 to-purple-600 p-3 rounded-full text-white shadow-lg shadow-sky-700/30">
                   <Sparkles size={24} />
@@ -601,8 +747,6 @@ export default function HomePage() {
                   <X size={20} />
                 </button>
               </div>
-
-              {/* CONTENT */}
               <div className="overflow-y-auto text-sm text-gray-700 dark:text-slate-300 leading-relaxed space-y-4 whitespace-pre-wrap pr-2 mb-4 custom-scrollbar">
                 <ReactMarkdown
                   components={{
@@ -629,8 +773,6 @@ export default function HomePage() {
                   {aiAdvice}
                 </ReactMarkdown>
               </div>
-
-              {/* FOOTER BUTTON */}
               <button
                 onClick={() => setIsAiModalOpen(false)}
                 className="w-full bg-gray-900 dark:bg-gray-700 text-white py-3.5 rounded-xl font-bold hover:bg-gray-800 dark:hover:bg-gray-600 active:scale-[0.98] transition-all shrink-0 shadow-lg"
@@ -641,7 +783,7 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* --- BUDGET MODAL (UPDATED WITH LIMIT) --- */}
+        {/* --- BUDGET MODAL --- */}
         {isBudgetModalOpen && (
           <div
             className="absolute inset-0 z-80 flex items-center justify-center px-4 bg-black/60 backdrop-blur-sm"
@@ -669,15 +811,12 @@ export default function HomePage() {
                 onChange={(e) => setTempBudget(e.target.value)}
                 autoFocus
               />
-
-              {/* INFO BATAS MAKSIMAL */}
               <p className="text-xs text-gray-400 dark:text-slate-500 text-center mb-4">
                 Maksimal:{" "}
                 <span className="text-sky-700 dark:text-sky-400 font-bold">
-                  {formatCurrency(income)}
+                  {formatCurrency(summary.income)}
                 </span>
               </p>
-
               <button
                 onClick={saveBudget}
                 className="w-full bg-sky-700 dark:bg-sky-800 text-white py-3 rounded-xl font-bold hover:bg-sky-800 dark:hover:bg-sky-700 transition active:scale-95"
@@ -688,7 +827,7 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* TOAST (UPDATED TO CENTER) */}
+        {/* TOAST */}
         {toast.show && (
           <div
             className={`fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-90 transition-all duration-300 ${

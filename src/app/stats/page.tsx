@@ -11,7 +11,7 @@ import {
   Loader2,
   Calendar,
   Download,
-  ArrowRight, // Icon baru untuk pemisah tanggal
+  ArrowRight,
 } from "lucide-react";
 import {
   PieChart,
@@ -34,41 +34,40 @@ interface Transaction {
 }
 
 const CATEGORY_COLORS = [
-  "#3b82f6",
-  "#ef4444",
-  "#10b981",
-  "#f59e0b",
-  "#8b5cf6",
-  "#ec4899",
-  "#6366f1",
+  "#3b82f6", // Blue
+  "#ef4444", // Red
+  "#10b981", // Emerald
+  "#f59e0b", // Amber
+  "#8b5cf6", // Violet
+  "#ec4899", // Pink
+  "#6366f1", // Indigo
+  "#14b8a6", // Teal
+  "#f97316", // Orange
+  "#64748b", // Slate (Others)
 ];
 
 export default function StatsPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // --- STATE FILTER CUSTOM (DEFAULT: PERIODE GAJIAN TGL 20) ---
+  // --- STATE FILTER CUSTOM ---
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
   useEffect(() => {
-    // 1. Logic Pintar untuk Default Tanggal (Gajian tgl 20)
+    // 1. Logic Pintar untuk Default Tanggal
     const now = new Date();
     const currentDay = now.getDate();
     let start, end;
 
     if (currentDay >= 20) {
-      // Jika hari ini tgl 20 ke atas (misal 23 Jan), berarti periode: 20 Jan - Hari Ini
       start = new Date(now.getFullYear(), now.getMonth(), 20);
       end = now;
     } else {
-      // Jika hari ini belum tgl 20 (misal 10 Jan), berarti periode: 20 Des - Hari Ini
       start = new Date(now.getFullYear(), now.getMonth() - 1, 20);
       end = now;
     }
 
-    // Format ke YYYY-MM-DD untuk input HTML
-    // Menggunakan toLocaleDateString('en-CA') menghasilkan format YYYY-MM-DD yang konsisten
     const formatToInput = (date: Date) => {
       const offset = date.getTimezoneOffset();
       const localDate = new Date(date.getTime() - offset * 60 * 1000);
@@ -93,9 +92,8 @@ export default function StatsPage() {
     }
   };
 
-  // --- LOGIC FILTER (CUSTOM RANGE) ---
+  // --- LOGIC FILTER ---
   const filteredTransactions = transactions.filter((t) => {
-    // Ambil bagian tanggal saja (YYYY-MM-DD)
     const tDate = t.date.split("T")[0];
     return tDate >= startDate && tDate <= endDate;
   });
@@ -120,8 +118,6 @@ export default function StatsPage() {
     });
 
     const worksheet = XLSX.utils.json_to_sheet(dataToExport);
-
-    // Auto-width columns
     const columnWidths = Object.keys(dataToExport[0]).map((key) => {
       let maxLength = key.length;
       dataToExport.forEach((row: any) => {
@@ -134,12 +130,40 @@ export default function StatsPage() {
 
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Report");
-
-    // Nama file dinamis sesuai periode
     XLSX.writeFile(workbook, `Myllet_Report_${startDate}_to_${endDate}.xlsx`);
   };
 
-  // --- LOGIC CHARTS ---
+  // --- HELPER: Process Data for Chart ---
+  const processChartData = (type: "income" | "expense") => {
+    // 1. Group by Category
+    const grouped = filteredTransactions
+      .filter((t) => t.type === type)
+      .reduce((acc: any, curr) => {
+        const cat = curr.category || "Others";
+        if (!acc[cat]) acc[cat] = 0;
+        acc[cat] += curr.amount;
+        return acc;
+      }, {});
+
+    // 2. Convert to Array & Sort
+    const sortedData = Object.keys(grouped)
+      .map((key) => ({ name: key, value: grouped[key] }))
+      .sort((a, b) => b.value - a.value);
+
+    // 3. Logic "Others" Grouping (Kunci Kerapihan!)
+    // Jika lebih dari 5 kategori, gabungkan sisanya jadi "Others"
+    if (sortedData.length > 5) {
+      const top5 = sortedData.slice(0, 5);
+      const othersValue = sortedData
+        .slice(5)
+        .reduce((sum, item) => sum + item.value, 0);
+      return [...top5, { name: "Others", value: othersValue }];
+    }
+
+    return sortedData;
+  };
+
+  // Get Data
   const totalIncome = filteredTransactions
     .filter((t) => t.type === "income")
     .reduce((acc, t) => acc + t.amount, 0);
@@ -152,33 +176,23 @@ export default function StatsPage() {
     { name: "Expense", value: totalExpense },
   ];
 
-  const expensesByCategory = filteredTransactions
-    .filter((t) => t.type === "expense")
-    .reduce((acc: any, curr) => {
-      const cat = curr.category || "Others";
-      if (!acc[cat]) acc[cat] = 0;
-      acc[cat] += curr.amount;
-      return acc;
-    }, {});
+  // Data Grafik (Sudah dikelompokkan "Others")
+  const expenseChartData = processChartData("expense");
+  const incomeChartData = processChartData("income");
 
-  const expenseChartData = Object.keys(expensesByCategory)
-    .map((key) => ({ name: key, value: expensesByCategory[key] }))
+  // Data List Detail (Full List tanpa "Others" grouping, biar user tetap bisa lihat detail)
+  const fullExpenseList = Object.entries(
+    filteredTransactions
+      .filter((t) => t.type === "expense")
+      .reduce((acc: any, curr) => {
+        const cat = curr.category || "Others";
+        acc[cat] = (acc[cat] || 0) + curr.amount;
+        return acc;
+      }, {})
+  )
+    .map(([name, value]) => ({ name, value: value as number }))
     .sort((a, b) => b.value - a.value);
 
-  const incomeByCategory = filteredTransactions
-    .filter((t) => t.type === "income")
-    .reduce((acc: any, curr) => {
-      const cat = curr.category || "Others";
-      if (!acc[cat]) acc[cat] = 0;
-      acc[cat] += curr.amount;
-      return acc;
-    }, {});
-
-  const incomeChartData = Object.keys(incomeByCategory)
-    .map((key) => ({ name: key, value: incomeByCategory[key] }))
-    .sort((a, b) => b.value - a.value);
-
-  // Helper untuk format tampilan tanggal di Card Overview
   const formatDateDisplay = (dateStr: string) => {
     if (!dateStr) return "-";
     return new Date(dateStr).toLocaleDateString("id-ID", {
@@ -190,7 +204,8 @@ export default function StatsPage() {
   return (
     <div className="bg-gray-100 dark:bg-slate-950 min-h-screen flex justify-center">
       <div className="fixed inset-0 w-full max-w-md bg-slate-50 dark:bg-slate-900 h-dvh flex flex-col overflow-hidden shadow-2xl overscroll-none mx-auto">
-        {/* HEADER DENGAN CUSTOM DATE RANGE */}
+        
+        {/* HEADER */}
         <header className="flex-none bg-sky-700 dark:bg-sky-800 px-6 pt-8 pb-6 rounded-b-4xl text-white shadow-md z-10">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-4">
@@ -203,19 +218,16 @@ export default function StatsPage() {
               <h1 className="text-2xl font-bold">Statistics</h1>
             </div>
 
-            <div className="flex items-center gap-2">
-              <button
-                onClick={downloadExcel}
-                disabled={filteredTransactions.length === 0}
-                className="bg-white/20 p-2 rounded-full hover:bg-white/30 transition disabled:opacity-50"
-                title="Download Excel"
-              >
-                <Download size={24} />
-              </button>
-            </div>
+            <button
+              onClick={downloadExcel}
+              disabled={filteredTransactions.length === 0}
+              className="bg-white/20 p-2 rounded-full hover:bg-white/30 transition disabled:opacity-50"
+              title="Download Excel"
+            >
+              <Download size={24} />
+            </button>
           </div>
 
-          {/* INPUT TANGGAL (GRID LAYOUT) */}
           <div className="bg-white/10 backdrop-blur-md p-3 rounded-xl border border-white/20">
             <div className="flex items-center gap-2 mb-1">
               <Calendar size={14} className="text-sky-100" />
@@ -289,11 +301,9 @@ export default function StatsPage() {
                         }
                         contentStyle={{
                           backgroundColor: "var(--bg-tooltip, #fff)",
-                          border: "1px solid var(--border-tooltip, #e5e7eb)",
                           borderRadius: "8px",
-                        }}
-                        labelStyle={{
-                          color: "var(--text-tooltip, #000)",
+                          border: "none",
+                          boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
                         }}
                       />
                       <Legend
@@ -306,7 +316,90 @@ export default function StatsPage() {
                 </div>
               </div>
 
-              {/* 2. INCOME CHART */}
+              {/* 2. EXPENSE BREAKDOWN (OPTIMIZED) */}
+              {expenseChartData.length > 0 && (
+                <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm">
+                  <h3 className="font-bold text-gray-800 dark:text-slate-100 mb-4 text-center">
+                    Expense Breakdown
+                  </h3>
+                  
+                  {/* GRAFIK (Grouped: Top 5 + Others) */}
+                  <div className="h-64 w-full mb-6">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={expenseChartData}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={60}
+                          outerRadius={80}
+                          paddingAngle={2}
+                          dataKey="value"
+                        >
+                          {expenseChartData.map((entry, index) => (
+                            <Cell
+                              key={`cell-${index}`}
+                              fill={CATEGORY_COLORS[index % CATEGORY_COLORS.length]}
+                            />
+                          ))}
+                        </Pie>
+                        <Tooltip
+                          formatter={(value: any) => `Rp ${value.toLocaleString("id-ID")}`}
+                          contentStyle={{
+                            backgroundColor: "#fff",
+                            borderRadius: "8px",
+                            border: "none",
+                            boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.1)"
+                          }}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+
+                  {/* LIST DETAIL (Full List, Scrollable) */}
+                  <div className="space-y-3 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+                    {fullExpenseList.map((item, idx) => {
+                        // Tentukan warna: Jika masuk Top 5 pakai warna chart, sisanya abu-abu
+                        const colorIndex = idx < 5 ? idx : CATEGORY_COLORS.length - 1;
+                        const barColor = CATEGORY_COLORS[colorIndex];
+                        const percentage = ((item.value / totalExpense) * 100).toFixed(1);
+
+                        return (
+                            <div key={idx} className="flex flex-col gap-1">
+                                <div className="flex justify-between items-center text-xs">
+                                    <div className="flex items-center gap-2">
+                                        <div 
+                                            className="w-2.5 h-2.5 rounded-full shrink-0" 
+                                            style={{ backgroundColor: barColor }}
+                                        ></div>
+                                        <span className="text-gray-700 dark:text-slate-300 font-medium truncate max-w-30">
+                                            {item.name}
+                                        </span>
+                                    </div>
+                                    <div className="text-right">
+                                        <span className="font-bold text-gray-900 dark:text-white block">
+                                            Rp {item.value.toLocaleString("id-ID")}
+                                        </span>
+                                        <span className="text-[10px] text-gray-400">
+                                            {percentage}%
+                                        </span>
+                                    </div>
+                                </div>
+                                {/* Mini Progress Bar */}
+                                <div className="w-full h-1 bg-gray-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                                    <div 
+                                        className="h-full rounded-full" 
+                                        style={{ width: `${percentage}%`, backgroundColor: barColor }}
+                                    ></div>
+                                </div>
+                            </div>
+                        );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* 3. INCOME SOURCES */}
               {incomeChartData.length > 0 && (
                 <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm">
                   <h3 className="font-bold text-gray-800 dark:text-slate-100 mb-4 text-center">
@@ -327,140 +420,32 @@ export default function StatsPage() {
                           {incomeChartData.map((entry, index) => (
                             <Cell
                               key={`cell-${index}`}
-                              fill={
-                                CATEGORY_COLORS[index % CATEGORY_COLORS.length]
-                              }
+                              fill={CATEGORY_COLORS[index % CATEGORY_COLORS.length]}
                             />
                           ))}
                         </Pie>
                         <Tooltip
-                          formatter={(value: any) =>
-                            `Rp ${value.toLocaleString("id-ID")}`
-                          }
+                          formatter={(value: any) => `Rp ${value.toLocaleString("id-ID")}`}
                           contentStyle={{
-                            backgroundColor: "var(--bg-tooltip, #fff)",
-                            border: "1px solid var(--border-tooltip, #e5e7eb)",
+                            backgroundColor: "#fff",
                             borderRadius: "8px",
-                          }}
-                          labelStyle={{
-                            color: "var(--text-tooltip, #000)",
+                            border: "none",
+                            boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
                           }}
                         />
-                        <Legend
-                          verticalAlign="bottom"
-                          height={36}
-                          iconType="circle"
-                        />
+                        <Legend verticalAlign="bottom" height={36} iconType="circle" />
                       </PieChart>
                     </ResponsiveContainer>
-                  </div>
-                  <div className="mt-4 space-y-2">
-                    {incomeChartData.map((item, idx) => (
-                      <div
-                        key={idx}
-                        className="flex justify-between items-center text-xs"
-                      >
-                        <div className="flex items-center gap-2">
-                          <div
-                            className="w-2 h-2 rounded-full"
-                            style={{
-                              backgroundColor:
-                                CATEGORY_COLORS[idx % CATEGORY_COLORS.length],
-                            }}
-                          ></div>
-                          <span className="text-gray-600 dark:text-slate-400">
-                            {item.name}
-                          </span>
-                        </div>
-                        <span className="font-bold text-gray-800 dark:text-slate-100">
-                          Rp {item.value.toLocaleString("id-ID")}
-                        </span>
-                      </div>
-                    ))}
                   </div>
                 </div>
               )}
 
-              {/* 3. EXPENSE CHART */}
-              {expenseChartData.length > 0 && (
-                <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm">
-                  <h3 className="font-bold text-gray-800 dark:text-slate-100 mb-4 text-center">
-                    Expense Breakdown
-                  </h3>
-                  <div className="h-56 w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={expenseChartData}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={50}
-                          outerRadius={70}
-                          paddingAngle={5}
-                          dataKey="value"
-                        >
-                          {expenseChartData.map((entry, index) => (
-                            <Cell
-                              key={`cell-${index}`}
-                              fill={
-                                CATEGORY_COLORS[index % CATEGORY_COLORS.length]
-                              }
-                            />
-                          ))}
-                        </Pie>
-                        <Tooltip
-                          formatter={(value: any) =>
-                            `Rp ${value.toLocaleString("id-ID")}`
-                          }
-                          contentStyle={{
-                            backgroundColor: "var(--bg-tooltip, #fff)",
-                            border: "1px solid var(--border-tooltip, #e5e7eb)",
-                            borderRadius: "8px",
-                          }}
-                          labelStyle={{
-                            color: "var(--text-tooltip, #000)",
-                          }}
-                        />
-                        <Legend
-                          verticalAlign="bottom"
-                          height={36}
-                          iconType="circle"
-                        />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </div>
-                  <div className="mt-4 space-y-2">
-                    {expenseChartData.slice(0, 5).map((item, idx) => (
-                      <div
-                        key={idx}
-                        className="flex justify-between items-center text-xs"
-                      >
-                        <div className="flex items-center gap-2">
-                          <div
-                            className="w-2 h-2 rounded-full"
-                            style={{
-                              backgroundColor:
-                                CATEGORY_COLORS[idx % CATEGORY_COLORS.length],
-                            }}
-                          ></div>
-                          <span className="text-gray-600 dark:text-slate-400">
-                            {item.name}
-                          </span>
-                        </div>
-                        <span className="font-bold text-gray-800 dark:text-slate-100">
-                          Rp {item.value.toLocaleString("id-ID")}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
           )}
         </main>
 
         {/* NAVBAR */}
-        <nav className="flex-none bg-white dark:bg-slate-800 border-t border-gray-100 dark:border-slate-700 py-3 px-17 flex justify-between items-center z-40 shadow-[0_-5px_10px_rgba(0,0,0,0.02)] dark:shadow-[0_-5px_10px_rgba(0,0,0,0.3)]">
+        <nav className="flex-none bg-white dark:bg-slate-800 border-t border-gray-100 dark:border-slate-700 py-3 px-15 flex justify-between items-center z-40 shadow-[0_-5px_10px_rgba(0,0,0,0.02)] dark:shadow-[0_-5px_10px_rgba(0,0,0,0.3)]">
           <Link
             href="/"
             className="flex flex-col items-center text-gray-400 dark:text-slate-400 hover:text-sky-700 dark:hover:text-sky-400 transition-colors"
