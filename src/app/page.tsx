@@ -71,7 +71,7 @@ export default function HomePage() {
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [selectedMonth, setSelectedMonth] = useState(
-    new Date().toISOString().slice(0, 7),
+    new Date().toISOString().slice(0, 7)
   );
 
   // Infinite Scroll Ref
@@ -114,7 +114,7 @@ export default function HomePage() {
     type: "expense" as "income" | "expense",
   });
 
-  // --- SCROLL TO TOP LOGIC (BARU) ---
+  // --- SCROLL TO TOP LOGIC ---
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -211,7 +211,7 @@ export default function HomePage() {
         setIsLoadingMore(false);
       }
     },
-    [searchQuery, selectedMonth],
+    [searchQuery, selectedMonth]
   );
 
   // Initial Load
@@ -232,18 +232,13 @@ export default function HomePage() {
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
-        if (
-          entries[0].isIntersecting &&
-          hasMore &&
-          !isLoadingMore &&
-          !isLoading
-        ) {
+        if (entries[0].isIntersecting && hasMore && !isLoadingMore && !isLoading) {
           const nextPage = page + 1;
           setPage(nextPage);
           fetchTransactions(nextPage, false);
         }
       },
-      { threshold: 0.5 },
+      { threshold: 0.5 }
     );
 
     if (observerTarget.current) {
@@ -303,7 +298,7 @@ export default function HomePage() {
     if (value > summary.income) {
       showToast(
         `Budget melebihi Income (${formatCurrency(summary.income)})`,
-        "error",
+        "error"
       );
       return;
     }
@@ -452,8 +447,10 @@ export default function HomePage() {
     });
 
   return (
-    <div className="bg-gray-100 dark:bg-slate-950 min-h-screen flex justify-center">
-      <div className="fixed inset-0 w-full max-w-md bg-slate-50 dark:bg-slate-900 h-dvh flex flex-col overflow-hidden shadow-2xl overscroll-none mx-auto">
+    // FIX 1: Background luar disamakan dengan dalam (slate-50/slate-900) biar seamless
+    <div className="bg-slate-50 dark:bg-slate-900 min-h-screen flex justify-center">
+      {/* FIX 2: Hapus shadow-2xl agar tidak ada border aneh di HP (tambah sm:shadow-2xl untuk Desktop) */}
+      <div className="fixed inset-0 w-full max-w-md bg-slate-50 dark:bg-slate-900 h-dvh flex flex-col overflow-hidden sm:shadow-2xl overscroll-none mx-auto">
         {/* HEADER */}
         <header className="flex-none bg-sky-700 dark:bg-sky-800 px-6 pt-8 pb-10 rounded-b-[2.5rem] text-white relative z-10 shadow-md">
           <div className="flex justify-between items-center mb-6">
@@ -529,7 +526,8 @@ export default function HomePage() {
         </header>
 
         {/* MAIN CONTENT */}
-        <main className="flex-1 px-6 pt-6 pb-24 overflow-y-auto overscroll-y-auto scroll-smooth">
+        {/* FIX 3: Tambah [&::-webkit-scrollbar]:hidden untuk hilangkan scrollbar fisik */}
+        <main className="flex-1 px-6 pt-6 pb-24 overflow-y-auto overscroll-y-auto scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
           {monthlyBudget > 0 && (
             <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm mb-6">
               <div className="flex justify-between items-center mb-2">
@@ -569,9 +567,8 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* --- FILTER ROW (JURUS PAMUNGKAS: FIXED WIDTH) --- */}
+          {/* --- FILTER ROW (Grid Layout Anti-Numpuk) --- */}
           <div className="flex flex-row gap-2 mb-6 w-full">
-            {/* 1. INPUT BULAN (Ambil 65% Lebar) */}
             <div className="relative w-[65%]">
               <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-slate-400 pointer-events-none">
                 <Filter size={14} />
@@ -584,7 +581,6 @@ export default function HomePage() {
               />
             </div>
 
-            {/* 2. SELECT SORT (Ambil 35% Lebar) */}
             <div className="relative w-[35%]">
               <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-slate-400 pointer-events-none">
                 <ArrowUpDown size={14} />
@@ -604,7 +600,7 @@ export default function HomePage() {
               </div>
             </div>
           </div>
-          
+
           {/* LIST TRANSACTIONS */}
           {isLoading && page === 0 ? (
             <div className="space-y-3 pb-4">
@@ -824,7 +820,7 @@ export default function HomePage() {
                 value={
                   tempBudget
                     ? new Intl.NumberFormat("id-ID").format(
-                        Number(tempBudget.replace(/\D/g, "")),
+                        Number(tempBudget.replace(/\D/g, ""))
                       )
                     : ""
                 }
