@@ -6,9 +6,6 @@ import ReactMarkdown from "react-markdown";
 import {
   PieChart,
   Plus,
-  Wallet,
-  ArrowUpCircle,
-  ArrowDownCircle,
   Loader2,
   X,
   Trash2,
@@ -27,6 +24,20 @@ import {
   AlertCircle,
   ChevronDown,
   Filter,
+  // --- ICON BARU UNTUK KATEGORI ---
+  Utensils,     // Food
+  Car,          // Transport
+  ShoppingBag,  // Shopping
+  Zap,          // Bills
+  Film,         // Entertainment
+  HeartPulse,   // Health
+  TrendingUp,   // Invest
+  MoreHorizontal,// Others
+  Banknote,     // Salary
+  Gift,         // Bonus
+  Wallet,
+  CircleArrowUp,
+  CircleArrowDown,       // Fallback
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
@@ -59,6 +70,52 @@ const EXPENSE_CATEGORIES = [
 const INCOME_CATEGORIES = ["Salary", "Bonus", "Gift", "Investment", "Others"];
 
 const ITEMS_PER_PAGE = 20;
+
+// --- HELPER: ICON KATEGORI DINAMIS ---
+const getCategoryIcon = (category: string, type: "income" | "expense") => {
+  if (type === "income") {
+    switch (category) {
+      case "Salary": return <Banknote size={20} />;
+      case "Bonus": return <Gift size={20} />;
+      case "Investment": return <TrendingUp size={20} />;
+      default: return <Wallet size={20} />;
+    }
+  } else {
+    switch (category) {
+      case "Food & Beverage": return <Utensils size={20} />;
+      case "Transportation": return <Car size={20} />;
+      case "Shopping": return <ShoppingBag size={20} />;
+      case "Bills & Utilities": return <Zap size={20} />;
+      case "Entertainment": return <Film size={20} />;
+      case "Health": return <HeartPulse size={20} />;
+      case "Invest": return <TrendingUp size={20} />;
+      default: return <MoreHorizontal size={20} />;
+    }
+  }
+};
+
+// --- HELPER: FORMAT HEADER TANGGAL PINTAR ---
+const getGroupHeaderDate = (dateString: string) => {
+  const date = new Date(dateString);
+  const today = new Date();
+  const yesterday = new Date();
+  yesterday.setDate(today.getDate() - 1);
+
+  // Reset jam untuk komparasi tanggal murni
+  date.setHours(0,0,0,0);
+  today.setHours(0,0,0,0);
+  yesterday.setHours(0,0,0,0);
+
+  if (date.getTime() === today.getTime()) return "Hari Ini";
+  if (date.getTime() === yesterday.getTime()) return "Kemarin";
+
+  return date.toLocaleDateString("id-ID", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: today.getFullYear() !== date.getFullYear() ? "numeric" : undefined
+  });
+};
 
 export default function HomePage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -114,7 +171,6 @@ export default function HomePage() {
     type: "expense" as "income" | "expense",
   });
 
-  // --- SCROLL TO TOP LOGIC ---
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -214,13 +270,11 @@ export default function HomePage() {
     [searchQuery, selectedMonth]
   );
 
-  // Initial Load
   useEffect(() => {
     const savedBudget = localStorage.getItem("monthlyBudget");
     if (savedBudget) setMonthlyBudget(Number(savedBudget));
   }, []);
 
-  // Trigger ulang saat Search/Bulan berubah
   useEffect(() => {
     setPage(0);
     setHasMore(true);
@@ -252,7 +306,6 @@ export default function HomePage() {
     };
   }, [hasMore, isLoadingMore, isLoading, page, fetchTransactions]);
 
-  // --- AI ADVISOR ---
   const handleAskAI = async () => {
     setIsAnalyzing(true);
     try {
@@ -429,11 +482,6 @@ export default function HomePage() {
   const displayAmount = formData.amount
     ? new Intl.NumberFormat("id-ID").format(Number(formData.amount))
     : "";
-  const formatDate = (dateString: string) =>
-    new Date(dateString).toLocaleDateString("en-GB", {
-      day: "numeric",
-      month: "short",
-    });
   const formatFullDate = (dateString: string) =>
     new Date(dateString).toLocaleDateString("en-GB", {
       day: "numeric",
@@ -447,15 +495,14 @@ export default function HomePage() {
     });
 
   return (
-    // FIX 1: Background luar disamakan dengan dalam (slate-50/slate-900) biar seamless
     <div className="bg-slate-50 dark:bg-slate-900 min-h-screen flex justify-center">
-      {/* FIX 2: Hapus shadow-2xl agar tidak ada border aneh di HP (tambah sm:shadow-2xl untuk Desktop) */}
       <div className="fixed inset-0 w-full max-w-md bg-slate-50 dark:bg-slate-900 h-dvh flex flex-col overflow-hidden sm:shadow-2xl overscroll-none mx-auto">
+        
         {/* HEADER */}
         <header className="flex-none bg-sky-700 dark:bg-sky-800 px-6 pt-8 pb-10 rounded-b-[2.5rem] text-white relative z-10 shadow-md">
           <div className="flex justify-between items-center mb-6">
             <div>
-              <p className="text-sky-100 text-sm mb-1">Total Balance</p>
+              <p className="text-sky-100 text-base mb-1">Total Balance</p>
               <h1 className="text-3xl font-bold">
                 {isLoading ? (
                   <div className="h-9 w-32 bg-sky-600/50 dark:bg-sky-500/50 rounded animate-pulse"></div>
@@ -465,7 +512,6 @@ export default function HomePage() {
               </h1>
             </div>
 
-            {/* ACTION BUTTONS */}
             <div className="flex items-center gap-2">
               <button
                 onClick={handleAskAI}
@@ -497,13 +543,13 @@ export default function HomePage() {
           <div className="bg-white dark:bg-slate-800 text-gray-800 dark:text-slate-100 p-3 rounded-2xl shadow-lg flex justify-between items-center gap-2">
             <div className="flex items-center gap-2 w-1/2 overflow-hidden">
               <div className="bg-green-100 dark:bg-green-900 p-1.5 rounded-full text-green-600 dark:text-green-400 shrink-0">
-                <ArrowUpCircle size={20} />
+                <CircleArrowUp size={20} />
               </div>
               <div className="min-w-0">
                 <p className="text-[10px] text-gray-500 dark:text-slate-400">
                   Income
                 </p>
-                <p className="font-bold text-xs sm:text-sm text-green-600 dark:text-green-400 truncate">
+                <p className="font-bold text-xs sm:text-base text-green-600 dark:text-green-400 truncate">
                   {isLoading ? "..." : formatCurrency(summary.income)}
                 </p>
               </div>
@@ -511,13 +557,13 @@ export default function HomePage() {
             <div className="w-px h-8 bg-gray-200 dark:bg-slate-700 shrink-0"></div>
             <div className="flex items-center gap-2 w-1/2 pl-1 overflow-hidden">
               <div className="bg-red-100 dark:bg-red-900 p-1.5 rounded-full text-red-600 dark:text-red-400 shrink-0">
-                <ArrowDownCircle size={20} />
+                <CircleArrowDown size={20} />
               </div>
               <div className="min-w-0">
                 <p className="text-[10px] text-gray-500 dark:text-slate-400">
                   Expense
                 </p>
-                <p className="font-bold text-xs sm:text-sm text-red-600 dark:text-red-400 truncate">
+                <p className="font-bold text-xs sm:text-base text-red-600 dark:text-red-400 truncate">
                   {isLoading ? "..." : formatCurrency(summary.expense)}
                 </p>
               </div>
@@ -526,7 +572,6 @@ export default function HomePage() {
         </header>
 
         {/* MAIN CONTENT */}
-        {/* FIX 3: Tambah [&::-webkit-scrollbar]:hidden untuk hilangkan scrollbar fisik */}
         <main className="flex-1 px-6 pt-6 pb-24 overflow-y-auto overscroll-y-auto scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
           {monthlyBudget > 0 && (
             <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm mb-6">
@@ -560,14 +605,13 @@ export default function HomePage() {
               <input
                 type="text"
                 placeholder="Search transaction..."
-                className="w-full bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 pl-10 pr-4 py-3 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-sky-100 dark:focus:ring-sky-700 shadow-sm placeholder:text-gray-300 dark:placeholder:text-slate-500 text-gray-900 dark:text-slate-100"
+                className="w-full bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 pl-10 pr-4 py-3 rounded-xl text-base font-medium focus:outline-none focus:ring-2 focus:ring-sky-100 dark:focus:ring-sky-700 shadow-sm placeholder:text-gray-300 dark:placeholder:text-slate-500 text-gray-900 dark:text-slate-100"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
           </div>
 
-          {/* --- FILTER ROW (Grid Layout Anti-Numpuk) --- */}
           <div className="flex flex-row gap-2 mb-6 w-full">
             <div className="relative w-[65%]">
               <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-slate-400 pointer-events-none">
@@ -601,7 +645,7 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* LIST TRANSACTIONS */}
+          {/* --- LIST TRANSACTIONS (WITH SMART GROUPING) --- */}
           {isLoading && page === 0 ? (
             <div className="space-y-3 pb-4">
               {[...Array(5)].map((_, i) => (
@@ -621,81 +665,101 @@ export default function HomePage() {
               ))}
             </div>
           ) : processedTransactions.length === 0 ? (
-            <div className="text-center py-10 text-gray-400 dark:text-slate-500 text-sm">
+            <div className="text-center py-10 text-gray-400 dark:text-slate-500 text-base">
               No transactions found in {selectedMonth || "this period"}.
             </div>
           ) : (
             <div className="space-y-3 pb-4">
-              {processedTransactions.map((item) => (
-                <div
-                  key={item.id}
-                  onClick={() => setDetailModal(item)}
-                  className="relative flex items-center justify-between bg-white dark:bg-slate-800 p-4 rounded-2xl border border-gray-50 dark:border-slate-700 shadow-sm hover:shadow-md dark:hover:shadow-slate-900 transition-all group active:scale-[0.98] cursor-pointer"
-                >
-                  <div className="flex items-center gap-4 flex-1 min-w-0 pr-2">
+              {processedTransactions.map((item, index) => {
+                // LOGIC GROUPING TANGGAL
+                const currentDate = item.date.split("T")[0];
+                const prevDate = index > 0 ? processedTransactions[index - 1].date.split("T")[0] : null;
+                const isNewGroup = currentDate !== prevDate;
+
+                return (
+                  <div key={item.id}>
+                    {/* Render Header Jika Tanggal Berubah */}
+                    {isNewGroup && (
+                      <div className="mt-6 mb-3 flex items-center gap-3">
+                        <div className="h-px bg-gray-200 dark:bg-slate-700 flex-1"></div>
+                        <span className="text-xs font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
+                          {getGroupHeaderDate(item.date)}
+                        </span>
+                        <div className="h-px bg-gray-200 dark:bg-slate-700 flex-1"></div>
+                      </div>
+                    )}
+
+                    {/* Render Item Transaksi */}
                     <div
-                      className={`w-12 h-12 flex items-center justify-center rounded-full shrink-0 ${item.type === "income" ? "bg-green-50 dark:bg-green-900 text-green-600 dark:text-green-400" : "bg-red-50 dark:bg-red-900 text-red-600 dark:text-red-400"}`}
+                      onClick={() => setDetailModal(item)}
+                      className="relative flex items-center justify-between bg-white dark:bg-slate-800 p-4 rounded-2xl border border-gray-50 dark:border-slate-700 shadow-sm hover:shadow-md dark:hover:shadow-slate-900 transition-all group active:scale-[0.98] cursor-pointer mb-3"
                     >
-                      {item.type === "income" ? (
-                        <ArrowUpCircle size={24} />
-                      ) : (
-                        <Wallet size={24} />
-                      )}
-                    </div>
-                    <div className="flex flex-col min-w-0">
-                      <h3 className="font-bold text-gray-900 dark:text-slate-100 text-sm truncate leading-tight mb-1">
-                        {item.title}
-                      </h3>
-                      <div className="flex items-center gap-1.5 text-xs text-gray-400 dark:text-slate-500">
-                        <span className="truncate max-w-25 font-medium text-gray-500 dark:text-slate-400">
-                          {item.category || "Others"}
-                        </span>
-                        <span className="w-1 h-1 bg-gray-300 dark:bg-slate-600 rounded-full shrink-0"></span>
-                        <span className="whitespace-nowrap">
-                          {formatDate(item.date)}
-                        </span>
+                      <div className="flex items-center gap-4 flex-1 min-w-0 pr-2">
+                        {/* ICON DINAMIS */}
+                        <div
+                          className={`w-12 h-12 flex items-center justify-center rounded-full shrink-0 ${
+                            item.type === "income"
+                              ? "bg-green-100/50 dark:bg-green-900/30 text-green-600 dark:text-green-400"
+                              : "bg-red-100/50 dark:bg-red-900/30 text-red-600 dark:text-red-400"
+                          }`}
+                        >
+                          {getCategoryIcon(item.category, item.type)}
+                        </div>
+                        <div className="flex flex-col min-w-0">
+                          <h3 className="font-bold text-gray-900 dark:text-slate-100 text-base truncate leading-tight mb-1">
+                            {item.title}
+                          </h3>
+                          <div className="flex items-center gap-1.5 text-xs text-gray-400 dark:text-slate-500">
+                            <span className="truncate max-w-25 font-medium text-gray-500 dark:text-slate-400">
+                              {item.category || "Others"}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex flex-col items-end gap-1 shrink-0">
+                        <p
+                          className={`font-bold text-base whitespace-nowrap ${
+                            item.type === "income"
+                              ? "text-green-600 dark:text-green-400"
+                              : "text-gray-900 dark:text-slate-100"
+                          }`}
+                        >
+                          {item.type === "expense" && "- "}
+                          {formatCurrency(item.amount)}
+                        </p>
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEdit(item);
+                            }}
+                            className="text-gray-300 dark:text-slate-500 hover:text-sky-700 dark:hover:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-900 p-1.5 rounded-lg transition-colors"
+                          >
+                            <Pencil size={14} />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDeleteModal({ show: true, id: item.id });
+                            }}
+                            className="text-gray-300 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900 p-1.5 rounded-lg transition-colors"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
-                  <div className="flex flex-col items-end gap-1 shrink-0">
-                    <p
-                      className={`font-bold text-sm whitespace-nowrap ${item.type === "income" ? "text-green-600 dark:text-green-400" : "text-gray-900 dark:text-slate-100"}`}
-                    >
-                      {item.type === "expense" && "- "}
-                      {formatCurrency(item.amount)}
-                    </p>
-                    <div className="flex items-center gap-1">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleEdit(item);
-                        }}
-                        className="text-gray-300 dark:text-slate-500 hover:text-sky-700 dark:hover:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-900 p-1.5 rounded-lg transition-colors"
-                      >
-                        <Pencil size={16} />
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setDeleteModal({ show: true, id: item.id });
-                        }}
-                        className="text-gray-300 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900 p-1.5 rounded-lg transition-colors"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
 
-              {/* INFINITE SCROLL TRIGGER */}
               {hasMore && (
                 <div
                   ref={observerTarget}
                   className="w-full py-4 flex justify-center items-center"
                 >
                   {isLoadingMore && (
-                    <div className="flex items-center gap-2 text-sm text-gray-400 dark:text-slate-500">
+                    <div className="flex items-center gap-2 text-base text-gray-400 dark:text-slate-500">
                       <Loader2 size={16} className="animate-spin" />
                       Loading more...
                     </div>
@@ -734,7 +798,6 @@ export default function HomePage() {
           </Link>
         </nav>
 
-        {/* --- AI ADVISOR MODAL --- */}
         {isAiModalOpen && (
           <div
             className="absolute inset-0 z-90 flex items-center justify-center px-4 bg-black/60 backdrop-blur-sm"
@@ -763,7 +826,7 @@ export default function HomePage() {
                   <X size={20} />
                 </button>
               </div>
-              <div className="overflow-y-auto text-sm text-gray-700 dark:text-slate-300 leading-relaxed space-y-4 whitespace-pre-wrap pr-2 mb-4 custom-scrollbar">
+              <div className="overflow-y-auto text-base text-gray-700 dark:text-slate-300 leading-relaxed space-y-4 whitespace-pre-wrap pr-2 mb-4 custom-scrollbar">
                 <ReactMarkdown
                   components={{
                     strong: ({ node, ...props }) => (
@@ -799,7 +862,6 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* --- BUDGET MODAL --- */}
         {isBudgetModalOpen && (
           <div
             className="absolute inset-0 z-80 flex items-center justify-center px-4 bg-black/60 backdrop-blur-sm"
@@ -843,7 +905,6 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* TOAST */}
         {toast.show && (
           <div
             className={`fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-90 transition-all duration-300 ${
@@ -864,7 +925,7 @@ export default function HomePage() {
               ) : (
                 <AlertCircle size={18} />
               )}
-              <span className="text-sm font-medium">{toast.message}</span>
+              <span className="text-base font-medium">{toast.message}</span>
             </div>
           </div>
         )}
@@ -879,11 +940,7 @@ export default function HomePage() {
               <div
                 className={`p-4 rounded-full mb-4 ${detailModal.type === "income" ? "bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-400" : "bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-400"}`}
               >
-                {detailModal.type === "income" ? (
-                  <ArrowUpCircle size={32} />
-                ) : (
-                  <Wallet size={32} />
-                )}
+                {getCategoryIcon(detailModal.category, detailModal.type)}
               </div>
               <h3 className="text-gray-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wide mb-1">
                 {detailModal.type === "income" ? "Income" : "Expense"}
@@ -899,7 +956,7 @@ export default function HomePage() {
                   <span className="text-gray-400 dark:text-slate-400 text-xs font-medium">
                     Title
                   </span>
-                  <span className="text-gray-800 dark:text-slate-100 text-sm font-bold text-right max-w-37.5 wrap-break-word">
+                  <span className="text-gray-800 dark:text-slate-100 text-base font-bold text-right max-w-37.5 wrap-break-word">
                     {detailModal.title}
                   </span>
                 </div>
@@ -909,7 +966,7 @@ export default function HomePage() {
                     <Tag size={14} />
                     <span className="text-xs font-medium">Category</span>
                   </div>
-                  <span className="text-gray-800 dark:text-slate-100 text-sm font-semibold">
+                  <span className="text-gray-800 dark:text-slate-100 text-base font-semibold">
                     {detailModal.category || "-"}
                   </span>
                 </div>
@@ -918,8 +975,8 @@ export default function HomePage() {
                     <Calendar size={14} />
                     <span className="text-xs font-medium">Date</span>
                   </div>
-                  <span className="text-gray-800 dark:text-slate-100 text-sm font-semibold">
-                    {formatFullDate(detailModal.date)}
+                  <span className="text-gray-800 dark:text-slate-100 text-base font-semibold">
+                    {getGroupHeaderDate(detailModal.date)}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
@@ -927,14 +984,14 @@ export default function HomePage() {
                     <Clock size={14} />
                     <span className="text-xs font-medium">Time</span>
                   </div>
-                  <span className="text-gray-800 dark:text-slate-100 text-sm font-semibold">
+                  <span className="text-gray-800 dark:text-slate-100 text-base font-semibold">
                     {formatTime(detailModal.date)}
                   </span>
                 </div>
               </div>
               <button
                 onClick={() => setDetailModal(null)}
-                className="mt-6 w-full bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-100 py-3 rounded-xl font-bold text-sm hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
+                className="mt-6 w-full bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-100 py-3 rounded-xl font-bold text-base hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
               >
                 Close
               </button>
@@ -1000,14 +1057,14 @@ export default function HomePage() {
                     onClick={() =>
                       setFormData({ ...formData, type: "expense" })
                     }
-                    className={`py-2.5 rounded-xl font-medium text-sm transition-all ${formData.type === "expense" ? "bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-400 border-2 border-red-200 dark:border-red-800" : "bg-gray-50 dark:bg-slate-700 text-gray-400 dark:text-slate-500"}`}
+                    className={`py-2.5 rounded-xl font-medium text-base transition-all ${formData.type === "expense" ? "bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-400 border-2 border-red-200 dark:border-red-800" : "bg-gray-50 dark:bg-slate-700 text-gray-400 dark:text-slate-500"}`}
                   >
                     Expense
                   </button>
                   <button
                     type="button"
                     onClick={() => setFormData({ ...formData, type: "income" })}
-                    className={`py-2.5 rounded-xl font-medium text-sm transition-all ${formData.type === "income" ? "bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-400 border-2 border-green-200 dark:border-green-800" : "bg-gray-50 dark:bg-slate-700 text-gray-400 dark:text-slate-500"}`}
+                    className={`py-2.5 rounded-xl font-medium text-base transition-all ${formData.type === "income" ? "bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-400 border-2 border-green-200 dark:border-green-800" : "bg-gray-50 dark:bg-slate-700 text-gray-400 dark:text-slate-500"}`}
                   >
                     Income
                   </button>
@@ -1019,7 +1076,7 @@ export default function HomePage() {
                   <input
                     type="text"
                     placeholder="e.g. Coffee"
-                    className="w-full bg-gray-50 dark:bg-slate-700 p-3 rounded-xl font-medium text-sm text-gray-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-100 dark:focus:ring-sky-700 placeholder:text-gray-400 dark:placeholder:text-slate-500"
+                    className="w-full bg-gray-50 dark:bg-slate-700 p-3 rounded-xl font-medium text-base text-gray-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-100 dark:focus:ring-sky-700 placeholder:text-gray-400 dark:placeholder:text-slate-500"
                     value={formData.title}
                     onChange={(e) =>
                       setFormData({ ...formData, title: e.target.value })
@@ -1052,7 +1109,7 @@ export default function HomePage() {
                     />
                     <input
                       type="date"
-                      className="w-full bg-gray-50 dark:bg-slate-700 p-3 pl-10 rounded-xl font-medium text-sm text-gray-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-700 appearance-none"
+                      className="w-full bg-gray-50 dark:bg-slate-700 p-3 pl-10 rounded-xl font-medium text-base text-gray-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-700 appearance-none"
                       value={formData.date}
                       onChange={(e) =>
                         setFormData({ ...formData, date: e.target.value })
@@ -1075,7 +1132,7 @@ export default function HomePage() {
                       onChange={(e) =>
                         setFormData({ ...formData, category: e.target.value })
                       }
-                      className="w-full bg-gray-50 dark:bg-slate-700 p-3 pl-10 rounded-xl font-medium text-sm text-gray-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-700 appearance-none"
+                      className="w-full bg-gray-50 dark:bg-slate-700 p-3 pl-10 rounded-xl font-medium text-base text-gray-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-700 appearance-none"
                       required
                     >
                       <option value="" disabled>

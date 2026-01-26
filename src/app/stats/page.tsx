@@ -151,7 +151,6 @@ export default function StatsPage() {
       .sort((a, b) => b.value - a.value);
 
     // 3. Logic "Others" Grouping (Kunci Kerapihan!)
-    // Jika lebih dari 5 kategori, gabungkan sisanya jadi "Others"
     if (sortedData.length > 5) {
       const top5 = sortedData.slice(0, 5);
       const othersValue = sortedData
@@ -176,11 +175,10 @@ export default function StatsPage() {
     { name: "Expense", value: totalExpense },
   ];
 
-  // Data Grafik (Sudah dikelompokkan "Others")
   const expenseChartData = processChartData("expense");
   const incomeChartData = processChartData("income");
 
-  // Data List Detail (Full List tanpa "Others" grouping, biar user tetap bisa lihat detail)
+  // Data List Detail (Full List tanpa grouping Others untuk list bawah)
   const fullExpenseList = Object.entries(
     filteredTransactions
       .filter((t) => t.type === "expense")
@@ -229,34 +227,36 @@ export default function StatsPage() {
           </div>
 
           <div className="bg-white/10 backdrop-blur-md p-3 rounded-xl border border-white/20">
-            <div className="flex items-center gap-2 mb-1">
+            <div className="flex items-center gap-2 mb-2">
               <Calendar size={14} className="text-sky-100" />
               <p className="text-[10px] text-sky-100 font-medium uppercase tracking-wider">
                 Custom Period
               </p>
             </div>
+            
+            {/* FIX: Layout Input Tanggal agar rapi di HP */}
             <div className="flex items-center gap-2">
               <input
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="w-full bg-white/20 rounded-lg px-2 py-1.5 text-xs text-white font-bold focus:outline-none focus:ring-2 focus:ring-white/30 text-center [&::-webkit-calendar-picker-indicator]:invert"
+                className="flex-1 min-w-0 bg-white/20 rounded-lg px-2 py-2 text-xs text-white font-bold focus:outline-none focus:ring-2 focus:ring-white/30 text-center [&::-webkit-calendar-picker-indicator]:invert"
               />
-              <span className="text-white/50">
+              <span className="text-white/50 shrink-0">
                 <ArrowRight size={14} />
               </span>
               <input
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="w-full bg-white/20 rounded-lg px-2 py-1.5 text-xs text-white font-bold focus:outline-none focus:ring-2 focus:ring-white/30 text-center [&::-webkit-calendar-picker-indicator]:invert"
+                className="flex-1 min-w-0 bg-white/20 rounded-lg px-2 py-2 text-xs text-white font-bold focus:outline-none focus:ring-2 focus:ring-white/30 text-center [&::-webkit-calendar-picker-indicator]:invert"
               />
             </div>
           </div>
         </header>
 
         {/* MAIN CONTENT */}
-        <main className="flex-1 px-6 pt-6 pb-6 overflow-y-auto overscroll-y-auto scroll-smooth">
+        <main className="flex-1 px-6 pt-6 pb-24 overflow-y-auto overscroll-y-auto scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
           {isLoading ? (
             <div className="flex justify-center py-20">
               <Loader2 className="animate-spin text-sky-700" size={32} />
@@ -300,10 +300,11 @@ export default function StatsPage() {
                           `Rp ${value.toLocaleString("id-ID")}`
                         }
                         contentStyle={{
-                          backgroundColor: "var(--bg-tooltip, #fff)",
+                          backgroundColor: "#fff",
                           borderRadius: "8px",
                           border: "none",
                           boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+                          color: "#333"
                         }}
                       />
                       <Legend
@@ -323,7 +324,7 @@ export default function StatsPage() {
                     Expense Breakdown
                   </h3>
                   
-                  {/* GRAFIK (Grouped: Top 5 + Others) */}
+                  {/* GRAFIK */}
                   <div className="h-64 w-full mb-6">
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
@@ -349,17 +350,17 @@ export default function StatsPage() {
                             backgroundColor: "#fff",
                             borderRadius: "8px",
                             border: "none",
-                            boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.1)"
+                            boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.1)",
+                            color: "#333"
                           }}
                         />
                       </PieChart>
                     </ResponsiveContainer>
                   </div>
 
-                  {/* LIST DETAIL (Full List, Scrollable) */}
+                  {/* LIST DETAIL (Scrollable) */}
                   <div className="space-y-3 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
                     {fullExpenseList.map((item, idx) => {
-                        // Tentukan warna: Jika masuk Top 5 pakai warna chart, sisanya abu-abu
                         const colorIndex = idx < 5 ? idx : CATEGORY_COLORS.length - 1;
                         const barColor = CATEGORY_COLORS[colorIndex];
                         const percentage = ((item.value / totalExpense) * 100).toFixed(1);
@@ -385,7 +386,6 @@ export default function StatsPage() {
                                         </span>
                                     </div>
                                 </div>
-                                {/* Mini Progress Bar */}
                                 <div className="w-full h-1 bg-gray-100 dark:bg-slate-700 rounded-full overflow-hidden">
                                     <div 
                                         className="h-full rounded-full" 
@@ -431,6 +431,7 @@ export default function StatsPage() {
                             borderRadius: "8px",
                             border: "none",
                             boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+                            color: "#333"
                           }}
                         />
                         <Legend verticalAlign="bottom" height={36} iconType="circle" />
