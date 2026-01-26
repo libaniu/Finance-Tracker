@@ -829,10 +829,10 @@ export default function HomePage() {
                       />
                     ),
                     ul: ({ node, ...props }) => (
-                      <ul className="list-disc pl-4 space-y-1" {...props} />
+                      <ul className="list-disc pl-5 space-y-1" {...props} />
                     ),
                     ol: ({ node, ...props }) => (
-                      <ol className="list-decimal pl-4 space-y-1" {...props} />
+                      <ol className="list-decimal pl-5 space-y-1" {...props} />
                     ),
                     li: ({ node, ...props }) => (
                       <li className="pl-1" {...props} />
