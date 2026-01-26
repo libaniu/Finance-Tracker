@@ -727,13 +727,13 @@ export default function HomePage() {
                           {item.type === "expense" && "- "}
                           {formatCurrency(item.amount)}
                         </p>
-                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex items-center gap-1 transition-opacity">
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
                               handleEdit(item);
                             }}
-                            className="text-gray-300 dark:text-slate-500 hover:text-sky-700 dark:hover:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-900 p-1.5 rounded-lg transition-colors"
+                            className="text-gray-300 dark:text-slate-400 hover:text-sky-700 dark:hover:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-900 p-1.5 rounded-lg transition-colors"
                           >
                             <Pencil size={14} />
                           </button>
@@ -742,7 +742,7 @@ export default function HomePage() {
                               e.stopPropagation();
                               setDeleteModal({ show: true, id: item.id });
                             }}
-                            className="text-gray-300 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900 p-1.5 rounded-lg transition-colors"
+                            className="text-gray-300 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900 p-1.5 rounded-lg transition-colors"
                           >
                             <Trash2 size={14} />
                           </button>
