@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import ReactMarkdown from "react-markdown";
 import {
   PieChart,
@@ -26,7 +26,7 @@ import {
   Home,
   AlertCircle,
   ChevronDown,
-  Filter, // Icon baru
+  Filter,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
@@ -70,10 +70,12 @@ export default function HomePage() {
   // Pagination & Filter State
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
-  // Default: Bulan Ini (Format YYYY-MM)
   const [selectedMonth, setSelectedMonth] = useState(
-    new Date().toISOString().slice(0, 7),
+    new Date().toISOString().slice(0, 7)
   );
+
+  // Infinite Scroll Ref
+  const observerTarget = useRef<HTMLDivElement>(null);
 
   // Budget & AI States
   const [monthlyBudget, setMonthlyBudget] = useState(0);
@@ -112,16 +114,19 @@ export default function HomePage() {
     type: "expense" as "income" | "expense",
   });
 
-  // 1. Fetch Summary (Kini mengikuti Filter Bulan agar Sinkron)
+  // --- SCROLL TO TOP LOGIC (BARU) ---
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  // 1. Fetch Summary
   const fetchSummary = useCallback(async () => {
     try {
       let query = supabase.from("transactions").select("amount, type");
 
-      // Apply Month Filter to Summary too
       if (selectedMonth) {
         const [year, month] = selectedMonth.split("-");
         const startDate = `${year}-${month}-01`;
-        // Hack: Tanggal 31 biar aman cover semua bulan
         const endDate = new Date(parseInt(year), parseInt(month), 0)
           .toISOString()
           .split("T")[0];
@@ -150,7 +155,7 @@ export default function HomePage() {
     }
   }, [selectedMonth]);
 
-  // 2. Fetch Transactions (Paginated + Filtered)
+  // 2. Fetch Transactions
   const fetchTransactions = useCallback(
     async (pageNum: number, isRefresh = false) => {
       try {
@@ -166,7 +171,6 @@ export default function HomePage() {
           .order("date", { ascending: false })
           .range(from, to);
 
-        // --- FILTER: MONTH ---
         if (selectedMonth) {
           const [year, month] = selectedMonth.split("-");
           const startDate = `${year}-${month}-01`;
@@ -179,7 +183,6 @@ export default function HomePage() {
             .lte("date", `${endDate}T23:59:59`);
         }
 
-        // --- FILTER: SEARCH ---
         if (searchQuery) {
           query = query.ilike("title", `%${searchQuery}%`);
         }
@@ -208,16 +211,16 @@ export default function HomePage() {
         setIsLoadingMore(false);
       }
     },
-    [searchQuery, selectedMonth],
+    [searchQuery, selectedMonth]
   );
 
-  // Initial Load & Effect saat Filter Berubah
+  // Initial Load
   useEffect(() => {
     const savedBudget = localStorage.getItem("monthlyBudget");
     if (savedBudget) setMonthlyBudget(Number(savedBudget));
   }, []);
 
-  // Trigger ulang saat Search atau Bulan berubah
+  // Trigger ulang saat Search/Bulan berubah
   useEffect(() => {
     setPage(0);
     setHasMore(true);
@@ -225,13 +228,31 @@ export default function HomePage() {
     fetchTransactions(0, true);
   }, [searchQuery, selectedMonth, fetchTransactions, fetchSummary]);
 
-  const handleLoadMore = () => {
-    const nextPage = page + 1;
-    setPage(nextPage);
-    fetchTransactions(nextPage, false);
-  };
+  // --- INFINITE SCROLL LOGIC ---
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !isLoadingMore && !isLoading) {
+          const nextPage = page + 1;
+          setPage(nextPage);
+          fetchTransactions(nextPage, false);
+        }
+      },
+      { threshold: 0.5 }
+    );
 
-  // --- AI ADVISOR LOGIC ---
+    if (observerTarget.current) {
+      observer.observe(observerTarget.current);
+    }
+
+    return () => {
+      if (observerTarget.current) {
+        observer.unobserve(observerTarget.current);
+      }
+    };
+  }, [hasMore, isLoadingMore, isLoading, page, fetchTransactions]);
+
+  // --- AI ADVISOR ---
   const handleAskAI = async () => {
     setIsAnalyzing(true);
     try {
@@ -265,7 +286,6 @@ export default function HomePage() {
     }
   };
 
-  // --- FORMATTERS ---
   const formatCurrency = (value: number) =>
     new Intl.NumberFormat("id-ID", {
       style: "currency",
@@ -273,18 +293,15 @@ export default function HomePage() {
       minimumFractionDigits: 0,
     }).format(value);
 
-  // --- BUDGET LOGIC ---
   const saveBudget = () => {
     const value = Number(tempBudget.replace(/\D/g, ""));
-
     if (value > summary.income) {
       showToast(
         `Budget melebihi Income (${formatCurrency(summary.income)})`,
-        "error",
+        "error"
       );
       return;
     }
-
     setMonthlyBudget(value);
     localStorage.setItem("monthlyBudget", value.toString());
     setIsBudgetModalOpen(false);
@@ -299,7 +316,6 @@ export default function HomePage() {
   if (budgetPercentage > 50) progressColor = "bg-yellow-500";
   if (budgetPercentage > 85) progressColor = "bg-red-500";
 
-  // Sorting Local
   const processedTransactions = [...transactions].sort((a, b) => {
     switch (sortBy) {
       case "date-desc":
@@ -508,7 +524,7 @@ export default function HomePage() {
         </header>
 
         {/* MAIN CONTENT */}
-        <main className="flex-1 px-6 pt-6 pb-6 overflow-y-auto overscroll-y-auto scroll-smooth">
+        <main className="flex-1 px-6 pt-6 pb-24 overflow-y-auto overscroll-y-auto scroll-smooth">
           {monthlyBudget > 0 && (
             <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm mb-6">
               <div className="flex justify-between items-center mb-2">
@@ -548,9 +564,9 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* --- FILTER ROW (BARU) --- */}
-          <div className="flex items-center gap-3 mb-4">
-            <div className="flex-1 relative">
+          {/* --- FILTER ROW --- */}
+          <div className="flex items-center justify-between gap-4 mb-6">
+            <div className="relative flex-1 min-w-0">
               <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-slate-400 pointer-events-none">
                 <Filter size={14} />
               </div>
@@ -558,25 +574,26 @@ export default function HomePage() {
                 type="month"
                 value={selectedMonth}
                 onChange={(e) => setSelectedMonth(e.target.value)}
-                className="w-full bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-300 text-xs font-semibold pl-9 pr-4 py-2 rounded-full focus:outline-none focus:ring-2 focus:ring-sky-100 dark:focus:ring-sky-700 shadow-sm [&::-webkit-calendar-picker-indicator]:opacity-50 [&::-webkit-calendar-picker-indicator]:brightness-0 dark:[&::-webkit-calendar-picker-indicator]:invert"
+                className="w-full bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-300 text-xs font-semibold pl-9 pr-3 py-2.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-100 dark:focus:ring-sky-700 shadow-sm [&::-webkit-calendar-picker-indicator]:opacity-100 [&::-webkit-calendar-picker-indicator]:brightness-0 dark:[&::-webkit-calendar-picker-indicator]:invert"
               />
             </div>
-
-            <div className="relative">
-              <ArrowUpDown
-                size={14}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-slate-400"
-              />
+            <div className="relative shrink-0">
+              <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-slate-400 pointer-events-none">
+                <ArrowUpDown size={14} />
+              </div>
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="appearance-none bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-300 text-xs font-semibold pl-8 pr-8 py-2 rounded-full focus:outline-none focus:ring-2 focus:ring-sky-100 dark:focus:ring-sky-700 shadow-sm"
+                className="appearance-none w-full bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-300 text-xs font-semibold pl-9 pr-8 py-2.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-100 dark:focus:ring-sky-700 shadow-sm"
               >
                 <option value="date-desc">Newest</option>
                 <option value="date-asc">Oldest</option>
                 <option value="amount-high">Highest</option>
                 <option value="amount-low">Lowest</option>
               </select>
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+                <ChevronDown size={14} />
+              </div>
             </div>
           </div>
 
@@ -667,37 +684,32 @@ export default function HomePage() {
                 </div>
               ))}
 
-              {/* LOAD MORE BUTTON */}
+              {/* INFINITE SCROLL TRIGGER */}
               {hasMore && (
-                <button
-                  onClick={handleLoadMore}
-                  disabled={isLoadingMore}
-                  className="w-full py-4 text-sm font-semibold text-gray-500 dark:text-slate-400 hover:text-sky-600 dark:hover:text-sky-400 transition-colors flex items-center justify-center gap-2"
+                <div
+                  ref={observerTarget}
+                  className="w-full py-4 flex justify-center items-center"
                 >
-                  {isLoadingMore ? (
-                    <>
+                  {isLoadingMore && (
+                    <div className="flex items-center gap-2 text-sm text-gray-400 dark:text-slate-500">
                       <Loader2 size={16} className="animate-spin" />
                       Loading more...
-                    </>
-                  ) : (
-                    <>
-                      Load More Transactions <ChevronDown size={16} />
-                    </>
+                    </div>
                   )}
-                </button>
+                </div>
               )}
             </div>
           )}
         </main>
 
         <nav className="flex-none bg-white dark:bg-slate-800 border-t border-gray-100 dark:border-slate-700 py-3 px-15 flex justify-between items-center z-40 shadow-[0_-5px_10px_rgba(0,0,0,0.02)] dark:shadow-[0_-5px_10px_rgba(0,0,0,0.3)]">
-          <Link
-            href="/"
+          <button
+            onClick={scrollToTop}
             className="flex flex-col items-center text-sky-700 dark:text-sky-400"
           >
             <Home size={24} />
             <span className="text-[10px] font-medium mt-1">Home</span>
-          </Link>
+          </button>
           <div className="relative -top-8">
             <button
               onClick={() => {
@@ -804,7 +816,7 @@ export default function HomePage() {
                 value={
                   tempBudget
                     ? new Intl.NumberFormat("id-ID").format(
-                        Number(tempBudget.replace(/\D/g, "")),
+                        Number(tempBudget.replace(/\D/g, ""))
                       )
                     : ""
                 }
