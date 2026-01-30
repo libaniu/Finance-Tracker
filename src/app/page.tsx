@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import ReactMarkdown from "react-markdown";
 import {
   PieChart,
@@ -76,21 +76,33 @@ const ITEMS_PER_PAGE = 20;
 const getCategoryIcon = (category: string, type: "income" | "expense") => {
   if (type === "income") {
     switch (category) {
-      case "Salary": return <Banknote size={20} />;
-      case "Bonus": return <Gift size={20} />;
-      case "Investment": return <TrendingUp size={20} />;
-      default: return <CircleArrowUp size={20} />;
+      case "Salary":
+        return <Banknote size={20} />;
+      case "Bonus":
+        return <Gift size={20} />;
+      case "Investment":
+        return <TrendingUp size={20} />;
+      default:
+        return <CircleArrowUp size={20} />;
     }
   } else {
     switch (category) {
-      case "Food & Beverage": return <Utensils size={20} />;
-      case "Transportation": return <Car size={20} />;
-      case "Shopping": return <ShoppingBag size={20} />;
-      case "Bills & Utilities": return <Zap size={20} />;
-      case "Entertainment": return <Film size={20} />;
-      case "Health": return <HeartPulse size={20} />;
-      case "Invest": return <TrendingUp size={20} />;
-      default: return <MoreHorizontal size={20} />;
+      case "Food & Beverage":
+        return <Utensils size={20} />;
+      case "Transportation":
+        return <Car size={20} />;
+      case "Shopping":
+        return <ShoppingBag size={20} />;
+      case "Bills & Utilities":
+        return <Zap size={20} />;
+      case "Entertainment":
+        return <Film size={20} />;
+      case "Health":
+        return <HeartPulse size={20} />;
+      case "Invest":
+        return <TrendingUp size={20} />;
+      default:
+        return <MoreHorizontal size={20} />;
     }
   }
 };
@@ -102,24 +114,26 @@ const getGroupHeaderDate = (dateString: string) => {
   const yesterday = new Date();
   yesterday.setDate(today.getDate() - 1);
 
-  date.setHours(0,0,0,0);
-  today.setHours(0,0,0,0);
-  yesterday.setHours(0,0,0,0);
+  const dateStr = date.toDateString();
+  const todayStr = today.toDateString();
+  const yesterdayStr = yesterday.toDateString();
 
-  if (date.getTime() === today.getTime()) return "Hari Ini";
-  if (date.getTime() === yesterday.getTime()) return "Kemarin";
+  if (dateStr === todayStr) return "Hari Ini";
+  if (dateStr === yesterdayStr) return "Kemarin";
 
   return date.toLocaleDateString("id-ID", {
     weekday: "long",
     day: "numeric",
     month: "long",
-    year: today.getFullYear() !== date.getFullYear() ? "numeric" : undefined
+    year: today.getFullYear() !== date.getFullYear() ? "numeric" : undefined,
   });
 };
 
 export default function HomePage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [summary, setSummary] = useState({ income: 0, expense: 0, balance: 0 });
+  const [isScrolled, setIsScrolled] = useState(false);
+  const mainRef = useRef<HTMLElement>(null);
 
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -127,7 +141,7 @@ export default function HomePage() {
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [selectedMonth, setSelectedMonth] = useState(
-    new Date().toISOString().slice(0, 7)
+    new Date().toISOString().slice(0, 7),
   );
 
   const observerTarget = useRef<HTMLDivElement>(null);
@@ -166,7 +180,7 @@ export default function HomePage() {
   });
 
   const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    mainRef.current?.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const fetchSummary = useCallback(async () => {
@@ -259,7 +273,7 @@ export default function HomePage() {
         setIsLoadingMore(false);
       }
     },
-    [searchQuery, selectedMonth]
+    [searchQuery, selectedMonth],
   );
 
   useEffect(() => {
@@ -277,13 +291,18 @@ export default function HomePage() {
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && hasMore && !isLoadingMore && !isLoading) {
+        if (
+          entries[0].isIntersecting &&
+          hasMore &&
+          !isLoadingMore &&
+          !isLoading
+        ) {
           const nextPage = page + 1;
           setPage(nextPage);
           fetchTransactions(nextPage, false);
         }
       },
-      { threshold: 0.5 }
+      { threshold: 0.5 },
     );
 
     if (observerTarget.current) {
@@ -342,7 +361,7 @@ export default function HomePage() {
     if (value > summary.income) {
       showToast(
         `Budget melebihi Income (${formatCurrency(summary.income)})`,
-        "error"
+        "error",
       );
       return;
     }
@@ -378,6 +397,28 @@ export default function HomePage() {
         return 0;
     }
   });
+
+  // --- GROUPING LOGIC (BY LOCAL DATE) ---
+  const groupedTransactionsList = useMemo(() => {
+    const groups: { date: string; items: Transaction[] }[] = [];
+
+    processedTransactions.forEach((transaction) => {
+      const tDate = new Date(transaction.date);
+      const dateKey = tDate.toLocaleDateString("en-CA"); // YYYY-MM-DD Local
+
+      const lastGroup = groups[groups.length - 1];
+      const lastGroupKey = lastGroup
+        ? new Date(lastGroup.date).toLocaleDateString("en-CA")
+        : "";
+
+      if (lastGroup && lastGroupKey === dateKey) {
+        lastGroup.items.push(transaction);
+      } else {
+        groups.push({ date: transaction.date, items: [transaction] });
+      }
+    });
+    return groups;
+  }, [processedTransactions]);
 
   const handleEdit = (item: Transaction) => {
     setEditingId(item.id);
@@ -493,73 +534,78 @@ export default function HomePage() {
   return (
     <div className="bg-slate-50 dark:bg-slate-900 min-h-screen flex justify-center">
       <div className="fixed inset-0 w-full max-w-md bg-slate-50 dark:bg-slate-900 h-dvh flex flex-col overflow-hidden sm:shadow-2xl overscroll-none mx-auto">
-        
         {/* HEADER */}
-        <header className="flex-none bg-sky-700 dark:bg-sky-800 px-6 pt-8 pb-10 rounded-b-[2.5rem] text-white relative z-10 shadow-md">
-          <div className="flex justify-between items-center mb-6">
-            <div>
-              <p className="text-sky-100 text-sm mb-1">Total Balance</p>
-              <h1 className="text-3xl font-bold">
-                {isLoading ? (
-                  <div className="h-9 w-32 bg-sky-600/50 dark:bg-sky-500/50 rounded animate-pulse"></div>
-                ) : (
-                  formatCurrency(summary.balance)
-                )}
-              </h1>
-            </div>
+        <header className="flex-none bg-gradient-to-br from-sky-600 to-blue-700 dark:from-sky-800 dark:to-blue-900 px-6 pt-8 pb-8 rounded-b-[2.5rem] text-white relative z-10 shadow-xl overflow-hidden">
+          {/* Decorative Background */}
+          <div className="absolute top-[-20%] right-[-10%] w-72 h-72 bg-white/10 rounded-full blur-3xl pointer-events-none"></div>
+          <div className="absolute bottom-[-10%] left-[-10%] w-48 h-48 bg-sky-400/20 rounded-full blur-2xl pointer-events-none"></div>
 
-            <div className="flex items-center gap-2">
-              <button
-                onClick={handleAskAI}
-                disabled={isAnalyzing}
-                className="bg-white/20 p-2 rounded-full backdrop-blur-sm hover:bg-white/30 transition active:scale-95 disabled:opacity-50 relative group"
-              >
-                {isAnalyzing ? (
-                  <Loader2 size={20} className="animate-spin" />
-                ) : (
-                  <Bot size={20} />
-                )}
-                {!isAnalyzing && (
-                  <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-green-400 rounded-full animate-pulse border-2 border-sky-700"></span>
-                )}
-              </button>
-
-              <button
-                onClick={() => {
-                  setTempBudget(monthlyBudget.toString());
-                  setIsBudgetModalOpen(true);
-                }}
-                className="bg-white/20 p-2 rounded-full backdrop-blur-sm hover:bg-white/30 transition active:scale-95"
-              >
-                <Settings size={20} />
-              </button>
-            </div>
-          </div>
-
-          <div className="bg-white dark:bg-slate-800 text-gray-800 dark:text-slate-100 p-3 rounded-2xl shadow-lg flex justify-between items-center gap-2">
-            <div className="flex items-center gap-2 w-1/2 overflow-hidden">
-              <div className="bg-green-100 dark:bg-green-900 p-1.5 rounded-full text-green-600 dark:text-green-400 shrink-0">
-                <CircleArrowUp size={20} />
-              </div>
-              <div className="min-w-0">
-                <p className="text-[10px] text-gray-500 dark:text-slate-400">
-                  Income
+          <div className="relative z-10">
+            <div className="flex justify-between items-start mb-6">
+              <div>
+                <p className="text-sky-100 text-sm font-medium mb-1 opacity-90">
+                  Total Balance
                 </p>
-                <p className="font-bold text-xs sm:text-sm text-green-600 dark:text-green-400 truncate">
+                <h1 className="text-4xl font-extrabold tracking-tight">
+                  {isLoading ? (
+                    <div className="h-10 w-40 bg-white/20 rounded animate-pulse"></div>
+                  ) : (
+                    formatCurrency(summary.balance)
+                  )}
+                </h1>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={handleAskAI}
+                  disabled={isAnalyzing}
+                  className="bg-white/15 p-2.5 rounded-2xl backdrop-blur-md hover:bg-white/25 transition active:scale-95 disabled:opacity-50 relative group border border-white/10 shadow-sm"
+                >
+                  {isAnalyzing ? (
+                    <Loader2 size={20} className="animate-spin" />
+                  ) : (
+                    <Bot size={20} />
+                  )}
+                  {!isAnalyzing && (
+                    <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-green-400 rounded-full animate-pulse border-2 border-sky-700"></span>
+                  )}
+                </button>
+
+                <button
+                  onClick={() => {
+                    setTempBudget(monthlyBudget.toString());
+                    setIsBudgetModalOpen(true);
+                  }}
+                  className="bg-white/15 p-2.5 rounded-2xl backdrop-blur-md hover:bg-white/25 transition active:scale-95 border border-white/10 shadow-sm"
+                >
+                  <Settings size={20} />
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              {/* Income Card */}
+              <div className="bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-2xl flex flex-col justify-center relative overflow-hidden group hover:bg-white/15 transition-colors">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="bg-green-400/20 p-2 rounded-full text-green-300 shrink-0">
+                    <CircleArrowUp size={18} />
+                  </div>
+                  <p className="text-xs text-sky-100 font-medium">Income</p>
+                </div>
+                <p className="font-bold text-lg text-white truncate tracking-wide">
                   {isLoading ? "..." : formatCurrency(summary.income)}
                 </p>
               </div>
-            </div>
-            <div className="w-px h-8 bg-gray-200 dark:bg-slate-700 shrink-0"></div>
-            <div className="flex items-center gap-2 w-1/2 pl-1 overflow-hidden">
-              <div className="bg-red-100 dark:bg-red-900 p-1.5 rounded-full text-red-600 dark:text-red-400 shrink-0">
-                <CircleArrowDown size={20} />
-              </div>
-              <div className="min-w-0">
-                <p className="text-[10px] text-gray-500 dark:text-slate-400">
-                  Expense
-                </p>
-                <p className="font-bold text-xs sm:text-sm text-red-600 dark:text-red-400 truncate">
+
+              {/* Expense Card */}
+              <div className="bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-2xl flex flex-col justify-center relative overflow-hidden group hover:bg-white/15 transition-colors">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="bg-red-400/20 p-2 rounded-full text-red-300 shrink-0">
+                    <CircleArrowDown size={18} />
+                  </div>
+                  <p className="text-xs text-sky-100 font-medium">Expense</p>
+                </div>
+                <p className="font-bold text-lg text-white truncate tracking-wide">
                   {isLoading ? "..." : formatCurrency(summary.expense)}
                 </p>
               </div>
@@ -568,7 +614,11 @@ export default function HomePage() {
         </header>
 
         {/* MAIN CONTENT */}
-        <main className="flex-1 px-6 pt-6 pb-24 overflow-y-auto overscroll-y-auto scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
+        <main
+          ref={mainRef}
+          onScroll={(e) => setIsScrolled(e.currentTarget.scrollTop > 20)}
+          className="flex-1 px-6 pt-6 pb-32 overflow-y-auto overscroll-y-auto scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']"
+        >
           {monthlyBudget > 0 && (
             <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm mb-6">
               <div className="flex justify-between items-center mb-2">
@@ -661,89 +711,94 @@ export default function HomePage() {
               ))}
             </div>
           ) : processedTransactions.length === 0 ? (
-            <div className="text-center py-10 text-gray-400 dark:text-slate-500 text-sm">
-              No transactions found in {selectedMonth || "this period"}.
+            <div className="flex flex-col items-center justify-center py-20 text-center">
+              <div className="bg-white dark:bg-slate-800 p-6 rounded-full mb-4 shadow-sm border border-gray-100 dark:border-slate-700">
+                <Wallet
+                  size={48}
+                  className="text-gray-300 dark:text-slate-600"
+                />
+              </div>
+              <p className="text-gray-500 dark:text-slate-400 font-medium">
+                No transactions yet
+              </p>
+              <p className="text-sm text-gray-400 dark:text-slate-500 mt-1 max-w-[200px]">
+                Start adding your expenses or income to see them here.
+              </p>
             </div>
           ) : (
-            <div className="space-y-3 pb-4">
-              {processedTransactions.map((item, index) => {
-                const currentDate = item.date.split("T")[0];
-                const prevDate = index > 0 ? processedTransactions[index - 1].date.split("T")[0] : null;
-                const isNewGroup = currentDate !== prevDate;
-
-                return (
-                  <div key={item.id}>
-                    {isNewGroup && (
-                      <div className="mt-6 mb-3 flex items-center gap-3">
-                        <div className="h-px bg-gray-200 dark:bg-slate-700 flex-1"></div>
-                        <span className="text-xs font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
-                          {getGroupHeaderDate(item.date)}
-                        </span>
-                        <div className="h-px bg-gray-200 dark:bg-slate-700 flex-1"></div>
-                      </div>
-                    )}
-
-                    <div
-                      onClick={() => setDetailModal(item)}
-                      className="relative flex items-center justify-between bg-white dark:bg-slate-800 p-4 rounded-2xl border border-gray-50 dark:border-slate-700 shadow-sm hover:shadow-md dark:hover:shadow-slate-900 transition-all group active:scale-[0.98] cursor-pointer mb-3"
-                    >
-                      <div className="flex items-center gap-4 flex-1 min-w-0 pr-2">
+            <div className="space-y-6 pb-4">
+              {groupedTransactionsList.map((group) => (
+                <div key={group.date}>
+                  <h3 className="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-3 px-2">
+                    {getGroupHeaderDate(group.date)}
+                  </h3>
+                  <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden">
+                    {group.items.map((item, index) => (
+                      <div key={item.id}>
                         <div
-                          className={`w-12 h-12 flex items-center justify-center rounded-full shrink-0 ${
-                            item.type === "income"
-                              ? "bg-green-100/50 dark:bg-green-900/30 text-green-600 dark:text-green-400"
-                              : "bg-red-100/50 dark:bg-red-900/30 text-red-600 dark:text-red-400"
-                          }`}
+                          onClick={() => setDetailModal(item)}
+                          className="flex items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors cursor-pointer active:bg-gray-100 dark:active:bg-slate-700"
                         >
-                          {getCategoryIcon(item.category, item.type)}
-                        </div>
-                        <div className="flex flex-col min-w-0">
-                          <h3 className="font-bold text-gray-900 dark:text-slate-100 text-sm truncate leading-tight mb-1">
-                            {item.title}
-                          </h3>
-                          <div className="flex items-center gap-1.5 text-xs text-gray-400 dark:text-slate-500">
-                            <span className="truncate max-w-25 font-medium text-gray-500 dark:text-slate-400">
-                              {item.category || "Others"}
-                            </span>
+                          <div className="flex items-center gap-4 flex-1 min-w-0 pr-2">
+                            <div
+                              className={`w-10 h-10 flex items-center justify-center rounded-full shrink-0 ${
+                                item.type === "income"
+                                  ? "bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400"
+                                  : "bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400"
+                              }`}
+                            >
+                              {getCategoryIcon(item.category, item.type)}
+                            </div>
+                            <div className="flex flex-col min-w-0">
+                              <h3 className="font-bold text-gray-900 dark:text-slate-100 text-sm truncate leading-tight mb-0.5">
+                                {item.title}
+                              </h3>
+                              <span className="text-xs text-gray-400 dark:text-slate-500 truncate">
+                                {item.category || "Others"}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex flex-col items-end gap-1 shrink-0">
+                            <p
+                              className={`font-bold text-sm whitespace-nowrap ${
+                                item.type === "income"
+                                  ? "text-green-600 dark:text-green-400"
+                                  : "text-gray-900 dark:text-slate-100"
+                              }`}
+                            >
+                              {item.type === "expense" && "- "}
+                              {formatCurrency(item.amount)}
+                            </p>
+                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleEdit(item);
+                                }}
+                                className="text-gray-400 hover:text-sky-600 p-1"
+                              >
+                                <Pencil size={14} />
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setDeleteModal({ show: true, id: item.id });
+                                }}
+                                className="text-gray-400 hover:text-red-500 p-1"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
                           </div>
                         </div>
+                        {index < group.items.length - 1 && (
+                          <div className="h-px bg-gray-100 dark:bg-slate-700 mx-4"></div>
+                        )}
                       </div>
-                      <div className="flex flex-col items-end gap-1 shrink-0">
-                        <p
-                          className={`font-bold text-sm whitespace-nowrap ${
-                            item.type === "income"
-                              ? "text-green-600 dark:text-green-400"
-                              : "text-gray-900 dark:text-slate-100"
-                          }`}
-                        >
-                          {item.type === "expense" && "- "}
-                          {formatCurrency(item.amount)}
-                        </p>
-                        <div className="flex items-center gap-1">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleEdit(item);
-                            }}
-                            className="text-gray-400 dark:text-slate-400 hover:text-sky-700 dark:hover:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-900 p-1.5 rounded-lg transition-colors"
-                          >
-                            <Pencil size={14} />
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setDeleteModal({ show: true, id: item.id });
-                            }}
-                            className="text-gray-400 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900 p-1.5 rounded-lg transition-colors"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
+                    ))}
                   </div>
-                );
-              })}
+                </div>
+              ))}
 
               {hasMore && (
                 <div
@@ -762,33 +817,50 @@ export default function HomePage() {
           )}
         </main>
 
-        <nav className="flex-none bg-white dark:bg-slate-800 border-t border-gray-100 dark:border-slate-700 py-3 px-15 flex justify-between items-center z-40 shadow-[0_-5px_10px_rgba(0,0,0,0.02)] dark:shadow-[0_-5px_10px_rgba(0,0,0,0.3)]">
+        {/* FAB (Floating Action Button) */}
+        <div className="absolute bottom-28 right-6 z-50">
           <button
-            onClick={scrollToTop}
-            className="flex flex-col items-center text-sky-700 dark:text-sky-400"
+            onClick={() => {
+              resetForm();
+              setIsDrawerOpen(true);
+            }}
+            className="bg-sky-700 dark:bg-sky-800 text-white h-14 w-14 rounded-full shadow-lg shadow-sky-700/40 dark:shadow-sky-800/40 flex items-center justify-center transform transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-sky-700/50 active:scale-90"
           >
-            <Home size={24} />
-            <span className="text-[10px] font-medium mt-1">Home</span>
+            <Plus size={32} />
           </button>
-          <div className="relative -top-8">
+        </div>
+
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-40 w-auto">
+          <nav className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-2xl border border-white/20 dark:border-slate-700 p-1.5 rounded-full flex items-center gap-1 shadow-[0_8px_30px_rgb(0,0,0,0.12)] dark:shadow-black/50 ring-1 ring-black/5">
             <button
-              onClick={() => {
-                resetForm();
-                setIsDrawerOpen(true);
-              }}
-              className="bg-sky-700 dark:bg-sky-800 text-white h-14 w-14 rounded-full shadow-lg shadow-sky-700/40 dark:shadow-sky-800/40 flex items-center justify-center transform transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-sky-700/50 active:scale-90"
+              onClick={scrollToTop}
+              className={`flex items-center bg-sky-100 dark:bg-sky-500/20 text-sky-700 dark:text-sky-300 rounded-full transition-all duration-300 active:scale-95 shadow-sm shadow-sky-100 dark:shadow-none ${isScrolled ? "px-3 py-3" : "px-5 py-3"}`}
             >
-              <Plus size={32} />
+              <Home
+                size={20}
+                strokeWidth={2.5}
+                fill="currentColor"
+                className="opacity-90"
+              />
+              <span
+                className={`text-sm font-bold overflow-hidden whitespace-nowrap transition-all duration-300 ${isScrolled ? "max-w-0 opacity-0" : "max-w-xs opacity-100 ml-2"}`}
+              >
+                Home
+              </span>
             </button>
-          </div>
-          <Link
-            href="/stats"
-            className="flex flex-col items-center text-gray-400 dark:text-slate-400 hover:text-sky-700 dark:hover:text-sky-400 transition-colors"
-          >
-            <PieChart size={24} />
-            <span className="text-[10px] font-medium mt-1">Stats</span>
-          </Link>
-        </nav>
+            <Link
+              href="/stats"
+              className={`flex items-center text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700/50 rounded-full transition-all duration-300 active:scale-95 ${isScrolled ? "px-3 py-3" : "px-5 py-3"}`}
+            >
+              <PieChart size={20} strokeWidth={2.5} />
+              <span
+                className={`text-sm font-medium overflow-hidden whitespace-nowrap transition-all duration-300 ${isScrolled ? "max-w-0 opacity-0" : "max-w-xs opacity-100 ml-2"}`}
+              >
+                Stats
+              </span>
+            </Link>
+          </nav>
+        </div>
 
         {/* --- AI ADVISOR MODAL --- */}
         {isAiModalOpen && (
@@ -876,7 +948,7 @@ export default function HomePage() {
                 value={
                   tempBudget
                     ? new Intl.NumberFormat("id-ID").format(
-                        Number(tempBudget.replace(/\D/g, ""))
+                        Number(tempBudget.replace(/\D/g, "")),
                       )
                     : ""
                 }
