@@ -375,7 +375,7 @@ export default function HomePage() {
     monthlyBudget > 0
       ? Math.min((summary.expense / monthlyBudget) * 100, 100)
       : 0;
-  let progressColor = "bg-sky-700";
+  let progressColor = "bg-blue-600";
   if (budgetPercentage > 50) progressColor = "bg-yellow-500";
   if (budgetPercentage > 85) progressColor = "bg-red-500";
 
@@ -535,15 +535,15 @@ export default function HomePage() {
     <div className="bg-slate-50 dark:bg-slate-900 min-h-screen flex justify-center">
       <div className="fixed inset-0 w-full max-w-md bg-slate-50 dark:bg-slate-900 h-dvh flex flex-col overflow-hidden sm:shadow-2xl overscroll-none mx-auto">
         {/* HEADER */}
-        <header className="flex-none bg-gradient-to-br from-sky-600 to-blue-700 dark:from-sky-800 dark:to-blue-900 px-6 pt-8 pb-8 rounded-b-[2.5rem] text-white relative z-10 shadow-xl overflow-hidden">
+        <header className="flex-none bg-linear-to-br from-blue-600 to-cyan-600 dark:from-blue-900 dark:to-cyan-950 px-6 pt-8 pb-8 rounded-b-[2.5rem] text-white relative z-10 shadow-xl overflow-hidden">
           {/* Decorative Background */}
           <div className="absolute top-[-20%] right-[-10%] w-72 h-72 bg-white/10 rounded-full blur-3xl pointer-events-none"></div>
-          <div className="absolute bottom-[-10%] left-[-10%] w-48 h-48 bg-sky-400/20 rounded-full blur-2xl pointer-events-none"></div>
+          <div className="absolute bottom-[-10%] left-[-10%] w-48 h-48 bg-blue-400/20 rounded-full blur-2xl pointer-events-none"></div>
 
           <div className="relative z-10">
             <div className="flex justify-between items-start mb-6">
               <div>
-                <p className="text-sky-100 text-sm font-medium mb-1 opacity-90">
+                <p className="text-indigo-100 text-sm font-medium mb-1 opacity-90">
                   Total Balance
                 </p>
                 <h1 className="text-4xl font-extrabold tracking-tight">
@@ -567,7 +567,7 @@ export default function HomePage() {
                     <Bot size={20} />
                   )}
                   {!isAnalyzing && (
-                    <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-green-400 rounded-full animate-pulse border-2 border-sky-700"></span>
+                    <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-green-400 rounded-full animate-pulse border-2 border-blue-600"></span>
                   )}
                 </button>
 
@@ -590,7 +590,7 @@ export default function HomePage() {
                   <div className="bg-green-400/20 p-2 rounded-full text-green-300 shrink-0">
                     <CircleArrowUp size={18} />
                   </div>
-                  <p className="text-xs text-sky-100 font-medium">Income</p>
+                  <p className="text-xs text-indigo-100 font-medium">Income</p>
                 </div>
                 <p className="font-bold text-lg text-white truncate tracking-wide">
                   {isLoading ? "..." : formatCurrency(summary.income)}
@@ -603,7 +603,7 @@ export default function HomePage() {
                   <div className="bg-red-400/20 p-2 rounded-full text-red-300 shrink-0">
                     <CircleArrowDown size={18} />
                   </div>
-                  <p className="text-xs text-sky-100 font-medium">Expense</p>
+                  <p className="text-xs text-indigo-100 font-medium">Expense</p>
                 </div>
                 <p className="font-bold text-lg text-white truncate tracking-wide">
                   {isLoading ? "..." : formatCurrency(summary.expense)}
@@ -651,7 +651,7 @@ export default function HomePage() {
               <input
                 type="text"
                 placeholder="Search transaction..."
-                className="w-full bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 pl-10 pr-4 py-3 rounded-xl text-base font-medium focus:outline-none focus:ring-2 focus:ring-sky-100 dark:focus:ring-sky-700 shadow-sm placeholder:text-gray-300 dark:placeholder:text-slate-500 text-gray-900 dark:text-slate-100"
+                className="w-full bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 pl-10 pr-4 py-3 rounded-xl text-base font-medium focus:outline-none focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900 shadow-sm placeholder:text-gray-300 dark:placeholder:text-slate-500 text-gray-900 dark:text-slate-100"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -667,7 +667,7 @@ export default function HomePage() {
                 type="month"
                 value={selectedMonth}
                 onChange={(e) => setSelectedMonth(e.target.value)}
-                className="w-full bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-300 text-xs font-semibold pl-9 pr-2 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-100 dark:focus:ring-sky-700 shadow-sm appearance-none min-w-0 [&::-webkit-calendar-picker-indicator]:opacity-100 [&::-webkit-calendar-picker-indicator]:brightness-0 dark:[&::-webkit-calendar-picker-indicator]:invert"
+                className="w-full bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-300 text-xs font-semibold pl-9 pr-2 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900 shadow-sm appearance-none min-w-0 [&::-webkit-calendar-picker-indicator]:opacity-100 [&::-webkit-calendar-picker-indicator]:brightness-0 dark:[&::-webkit-calendar-picker-indicator]:invert"
               />
             </div>
 
@@ -678,7 +678,7 @@ export default function HomePage() {
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="appearance-none w-full bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-300 text-xs font-semibold pl-9 pr-8 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-100 dark:focus:ring-sky-700 shadow-sm truncate"
+                className="appearance-none w-full bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-300 text-xs font-semibold pl-9 pr-8 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900 shadow-sm truncate"
               >
                 <option value="date-desc">Newest</option>
                 <option value="date-asc">Oldest</option>
@@ -721,7 +721,7 @@ export default function HomePage() {
               <p className="text-gray-500 dark:text-slate-400 font-medium">
                 No transactions yet
               </p>
-              <p className="text-sm text-gray-400 dark:text-slate-500 mt-1 max-w-[200px]">
+              <p className="text-sm text-gray-400 dark:text-slate-500 mt-1 max-w-50">
                 Start adding your expenses or income to see them here.
               </p>
             </div>
@@ -769,13 +769,13 @@ export default function HomePage() {
                               {item.type === "expense" && "- "}
                               {formatCurrency(item.amount)}
                             </p>
-                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="flex items-center gap-1">
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   handleEdit(item);
                                 }}
-                                className="text-gray-400 hover:text-sky-600 p-1"
+                                className="text-gray-400 hover:text-blue-600 p-1"
                               >
                                 <Pencil size={14} />
                               </button>
@@ -824,7 +824,7 @@ export default function HomePage() {
               resetForm();
               setIsDrawerOpen(true);
             }}
-            className="bg-sky-700 dark:bg-sky-800 text-white h-14 w-14 rounded-full shadow-lg shadow-sky-700/40 dark:shadow-sky-800/40 flex items-center justify-center transform transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-sky-700/50 active:scale-90"
+            className="bg-linear-to-r from-blue-600 to-cyan-600 text-white h-14 w-14 rounded-full shadow-lg shadow-blue-600/40 dark:shadow-blue-900/40 flex items-center justify-center transform transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-blue-600/50 active:scale-90"
           >
             <Plus size={32} />
           </button>
@@ -834,7 +834,7 @@ export default function HomePage() {
           <nav className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-2xl border border-white/20 dark:border-slate-700 p-1.5 rounded-full flex items-center gap-1 shadow-[0_8px_30px_rgb(0,0,0,0.12)] dark:shadow-black/50 ring-1 ring-black/5">
             <button
               onClick={scrollToTop}
-              className={`flex items-center bg-sky-100 dark:bg-sky-500/20 text-sky-700 dark:text-sky-300 rounded-full transition-all duration-300 active:scale-95 shadow-sm shadow-sky-100 dark:shadow-none ${isScrolled ? "px-3 py-3" : "px-5 py-3"}`}
+              className={`flex items-center bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 rounded-full transition-all duration-300 active:scale-95 shadow-sm shadow-blue-100 dark:shadow-none ${isScrolled ? "px-3 py-3" : "px-5 py-3"}`}
             >
               <Home
                 size={20}
@@ -850,7 +850,7 @@ export default function HomePage() {
             </button>
             <Link
               href="/stats"
-              className={`flex items-center text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700/50 rounded-full transition-all duration-300 active:scale-95 ${isScrolled ? "px-3 py-3" : "px-5 py-3"}`}
+              className={`flex items-center text-gray-400 dark:text-slate-500 hover:text-blue-600 dark:hover:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700/50 rounded-full transition-all duration-300 active:scale-95 ${isScrolled ? "px-3 py-3" : "px-5 py-3"}`}
             >
               <PieChart size={20} strokeWidth={2.5} />
               <span
@@ -873,14 +873,14 @@ export default function HomePage() {
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center gap-3 mb-4 border-b border-gray-100 dark:border-slate-700 pb-4 shrink-0">
-                <div className="bg-linear-to-tr from-sky-700 to-purple-600 p-3 rounded-full text-white shadow-lg shadow-sky-700/30">
+                <div className="bg-linear-to-tr from-blue-600 to-cyan-600 p-3 rounded-full text-white shadow-lg shadow-blue-600/30">
                   <Sparkles size={24} />
                 </div>
                 <div>
                   <h3 className="text-xl font-bold text-gray-900 dark:text-slate-100 leading-none">
                     Financial Advisor
                   </h3>
-                  <p className="text-xs text-sky-700 dark:text-sky-400 font-medium mt-1">
+                  <p className="text-xs text-blue-600 dark:text-blue-400 font-medium mt-1">
                     Powered by Gemini AI
                   </p>
                 </div>
@@ -943,7 +943,7 @@ export default function HomePage() {
               <input
                 type="text"
                 inputMode="numeric"
-                className="w-full bg-gray-50 dark:bg-slate-700 p-3 rounded-xl font-bold text-lg text-gray-800 dark:text-slate-100 text-center focus:outline-none focus:ring-2 focus:ring-sky-100 dark:focus:ring-sky-700 mb-2"
+                className="w-full bg-gray-50 dark:bg-slate-700 p-3 rounded-xl font-bold text-lg text-gray-800 dark:text-slate-100 text-center focus:outline-none focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900 mb-2"
                 placeholder="e.g. 2000000"
                 value={
                   tempBudget
@@ -957,13 +957,13 @@ export default function HomePage() {
               />
               <p className="text-xs text-gray-400 dark:text-slate-500 text-center mb-4">
                 Maksimal:{" "}
-                <span className="text-sky-700 dark:text-sky-400 font-bold">
+                <span className="text-blue-600 dark:text-blue-400 font-bold">
                   {formatCurrency(summary.income)}
                 </span>
               </p>
               <button
                 onClick={saveBudget}
-                className="w-full bg-sky-700 dark:bg-sky-800 text-white py-3 rounded-xl font-bold hover:bg-sky-800 dark:hover:bg-sky-700 transition active:scale-95"
+                className="w-full bg-blue-600 dark:bg-blue-700 text-white py-3 rounded-xl font-bold hover:bg-blue-700 dark:hover:bg-blue-600 transition active:scale-95"
               >
                 Save Budget
               </button>
@@ -1100,50 +1100,77 @@ export default function HomePage() {
         )}
 
         {isDrawerOpen && (
-          <div className="absolute inset-0 z-60 flex flex-col justify-end">
+          <div className="absolute inset-0 z-60 flex items-center justify-center px-4">
             <div
-              className="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
               onClick={resetForm}
             ></div>
-            <div className="bg-white dark:bg-slate-800 rounded-t-4xl p-5 relative z-10 animate-in slide-in-from-bottom duration-300">
+            <div className="bg-white dark:bg-slate-800 w-full max-w-sm rounded-3xl p-6 relative z-10 animate-in zoom-in-95 duration-300 shadow-2xl border border-white/20">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-bold text-gray-800 dark:text-slate-100">
-                  {editingId ? "Edit Transaction" : "Add Transaction"}
+                  {editingId ? "Edit Transaction" : "New Transaction"}
                 </h3>
                 <button
                   onClick={resetForm}
-                  className="bg-gray-100 dark:bg-slate-700 p-2 rounded-full text-gray-500 dark:text-slate-400"
+                  className="bg-gray-100 dark:bg-slate-700 p-2 rounded-full text-gray-500 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
                 >
                   <X size={18} />
                 </button>
               </div>
-              <form onSubmit={handleSubmit} className="space-y-3">
-                <div className="grid grid-cols-2 gap-2 mb-3">
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {/* Type Toggle - Compact */}
+                <div className="bg-gray-100 dark:bg-slate-700 p-1 rounded-xl flex">
                   <button
                     type="button"
                     onClick={() =>
                       setFormData({ ...formData, type: "expense" })
                     }
-                    className={`py-2.5 rounded-xl font-medium text-sm transition-all ${formData.type === "expense" ? "bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-400 border-2 border-red-200 dark:border-red-800" : "bg-gray-50 dark:bg-slate-700 text-gray-400 dark:text-slate-500"}`}
+                    className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${
+                      formData.type === "expense"
+                        ? "bg-white dark:bg-slate-800 text-red-500 shadow-sm"
+                        : "text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200"
+                    }`}
                   >
                     Expense
                   </button>
                   <button
                     type="button"
                     onClick={() => setFormData({ ...formData, type: "income" })}
-                    className={`py-2.5 rounded-xl font-medium text-sm transition-all ${formData.type === "income" ? "bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-400 border-2 border-green-200 dark:border-green-800" : "bg-gray-50 dark:bg-slate-700 text-gray-400 dark:text-slate-500"}`}
+                    className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${
+                      formData.type === "income"
+                        ? "bg-white dark:bg-slate-800 text-green-500 shadow-sm"
+                        : "text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200"
+                    }`}
                   >
                     Income
                   </button>
                 </div>
+
+                {/* Amount Input - Big & Center */}
                 <div>
-                  <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">
-                    Title
-                  </label>
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-lg">
+                      Rp
+                    </span>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="0"
+                      className="w-full bg-transparent border-b-2 border-gray-200 dark:border-slate-700 py-2 pl-12 pr-4 text-3xl font-bold text-gray-800 dark:text-slate-100 focus:outline-none focus:border-blue-500 transition-colors placeholder:text-gray-300"
+                      value={displayAmount}
+                      onChange={handleAmountChange}
+                      required
+                      autoFocus
+                    />
+                  </div>
+                </div>
+
+                {/* Title Input */}
+                <div>
                   <input
                     type="text"
-                    placeholder="e.g. Coffee"
-                    className="w-full bg-gray-50 dark:bg-slate-700 p-3 rounded-xl font-medium text-base text-gray-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-100 dark:focus:ring-sky-700 placeholder:text-gray-400 dark:placeholder:text-slate-500"
+                    placeholder="What is this for?"
+                    className="w-full bg-gray-50 dark:bg-slate-700/50 p-3 rounded-xl font-medium text-gray-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900 placeholder:text-gray-400 text-sm"
                     value={formData.title}
                     onChange={(e) =>
                       setFormData({ ...formData, title: e.target.value })
@@ -1151,32 +1178,17 @@ export default function HomePage() {
                     required
                   />
                 </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">
-                    Amount
-                  </label>
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    placeholder="0"
-                    className="w-full bg-gray-50 dark:bg-slate-700 p-3 rounded-xl font-bold text-lg text-gray-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-700"
-                    value={displayAmount}
-                    onChange={handleAmountChange}
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">
-                    Date
-                  </label>
+
+                {/* Date & Category Group */}
+                <div className="grid grid-cols-2 gap-3">
                   <div className="relative">
                     <Calendar
-                      size={16}
-                      className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500"
+                      size={14}
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
                     />
                     <input
                       type="date"
-                      className="w-full bg-gray-50 dark:bg-slate-700 p-3 pl-10 rounded-xl font-medium text-base text-gray-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-700 appearance-none"
+                      className="w-full bg-gray-50 dark:bg-slate-700/50 p-3 pl-9 rounded-xl font-medium text-sm text-gray-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900"
                       value={formData.date}
                       onChange={(e) =>
                         setFormData({ ...formData, date: e.target.value })
@@ -1184,26 +1196,21 @@ export default function HomePage() {
                       required
                     />
                   </div>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">
-                    Category
-                  </label>
                   <div className="relative">
                     <Tag
-                      size={16}
-                      className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500"
+                      size={14}
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
                     />
                     <select
                       value={formData.category}
                       onChange={(e) =>
                         setFormData({ ...formData, category: e.target.value })
                       }
-                      className="w-full bg-gray-50 dark:bg-slate-700 p-3 pl-10 rounded-xl font-medium text-base text-gray-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-700 appearance-none"
+                      className="w-full bg-gray-50 dark:bg-slate-700/50 p-3 pl-9 rounded-xl font-medium text-sm text-gray-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900 appearance-none"
                       required
                     >
                       <option value="" disabled>
-                        Select Category
+                        Category
                       </option>
                       {formData.type === "expense"
                         ? EXPENSE_CATEGORIES.map((cat) => (
@@ -1219,10 +1226,11 @@ export default function HomePage() {
                     </select>
                   </div>
                 </div>
+
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full bg-sky-600 dark:bg-sky-700 text-white py-3 rounded-xl font-bold text-base mt-2 shadow-lg shadow-blue-600/30 dark:shadow-blue-800/30 active:scale-95 transition-all disabled:opacity-50"
+                  className="w-full bg-linear-to-r from-blue-600 to-cyan-600 dark:bg-blue-700 text-white py-3.5 rounded-xl font-bold text-sm mt-2 shadow-lg shadow-blue-600/20 hover:bg-blue-700 active:scale-95 transition-all disabled:opacity-50"
                 >
                   {isSubmitting
                     ? "Saving..."

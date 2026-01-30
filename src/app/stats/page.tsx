@@ -42,8 +42,8 @@ const CATEGORY_COLORS = [
   "#ef4444", // Red
   "#10b981", // Emerald
   "#f59e0b", // Amber
-  "#8b5cf6", // Violet
-  "#ec4899", // Pink
+  "#06b6d4", // Cyan
+  "#84cc16", // Lime
   "#6366f1", // Indigo
   "#14b8a6", // Teal
   "#f97316", // Orange
@@ -232,10 +232,10 @@ export default function StatsPage() {
     <div className="bg-slate-50 dark:bg-slate-900 min-h-screen flex justify-center">
       <div className="fixed inset-0 w-full max-w-md bg-slate-50 dark:bg-slate-900 h-dvh flex flex-col overflow-hidden shadow-2xl overscroll-none mx-auto">
         {/* HEADER */}
-        <header className="flex-none bg-gradient-to-br from-sky-600 to-blue-700 dark:from-sky-800 dark:to-blue-900 px-6 pt-12 pb-10 rounded-b-[3rem] text-white relative z-10 shadow-xl overflow-hidden">
+        <header className="flex-none bg-linear-to-br from-blue-600 to-cyan-600 dark:from-blue-900 dark:to-cyan-950 px-6 pt-12 pb-10 rounded-b-[3rem] text-white relative z-10 shadow-xl overflow-hidden">
           {/* Decorative Background */}
           <div className="absolute top-[-20%] right-[-10%] w-72 h-72 bg-white/10 rounded-full blur-3xl pointer-events-none"></div>
-          <div className="absolute bottom-[-10%] left-[-10%] w-48 h-48 bg-sky-400/20 rounded-full blur-2xl pointer-events-none"></div>
+          <div className="absolute bottom-[-10%] left-[-10%] w-48 h-48 bg-blue-400/20 rounded-full blur-2xl pointer-events-none"></div>
 
           <div className="relative z-10">
             <div className="flex items-center justify-between mb-6">
@@ -263,8 +263,8 @@ export default function StatsPage() {
 
             <div className="bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/20 shadow-sm">
               <div className="flex items-center gap-2 mb-2">
-                <Calendar size={14} className="text-sky-100" />
-                <p className="text-[10px] text-sky-100 font-medium uppercase tracking-wider">
+                <Calendar size={14} className="text-indigo-100" />
+                <p className="text-[10px] text-indigo-100 font-medium uppercase tracking-wider">
                   Custom Period
                 </p>
               </div>
@@ -298,7 +298,7 @@ export default function StatsPage() {
         >
           {isLoading ? (
             <div className="flex justify-center py-20">
-              <Loader2 className="animate-spin text-sky-700" size={32} />
+              <Loader2 className="animate-spin text-blue-600" size={32} />
             </div>
           ) : filteredTransactions.length === 0 ? (
             <div className="text-center py-20">
@@ -583,7 +583,7 @@ export default function StatsPage() {
           <nav className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-2xl border border-white/20 dark:border-slate-700 p-1.5 rounded-full flex items-center gap-1 shadow-[0_8px_30px_rgb(0,0,0,0.12)] dark:shadow-black/50 ring-1 ring-black/5">
             <Link
               href="/"
-              className={`flex items-center text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700/50 rounded-full transition-all duration-300 active:scale-95 ${isScrolled ? "px-3 py-3" : "px-5 py-3"}`}
+              className={`flex items-center text-gray-400 dark:text-slate-500 hover:text-blue-600 dark:hover:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700/50 rounded-full transition-all duration-300 active:scale-95 ${isScrolled ? "px-3 py-3" : "px-5 py-3"}`}
             >
               <Home size={20} strokeWidth={2.5} />
               <span
@@ -593,7 +593,7 @@ export default function StatsPage() {
               </span>
             </Link>
             <button
-              className={`flex items-center bg-sky-100 dark:bg-sky-500/20 text-sky-700 dark:text-sky-300 rounded-full transition-all duration-300 active:scale-95 shadow-sm shadow-sky-100 dark:shadow-none ${isScrolled ? "px-3 py-3" : "px-5 py-3"}`}
+              className={`flex items-center bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 rounded-full transition-all duration-300 active:scale-95 shadow-sm shadow-blue-100 dark:shadow-none ${isScrolled ? "px-3 py-3" : "px-5 py-3"}`}
             >
               <PieIcon
                 size={20}
