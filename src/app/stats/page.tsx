@@ -313,9 +313,9 @@ export default function StatsPage() {
             <div className="space-y-6 pb-4">
               {/* 1. FINANCIAL SUMMARY */}
               <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm">
-                <h3 className="font-bold text-gray-800 dark:text-slate-100 mb-1 text-center">
+                <h2 className="font-bold text-gray-800 dark:text-slate-100 mb-1 text-center">
                   Financial Overview
-                </h3>
+                </h2>
                 <p className="text-xs text-gray-400 dark:text-slate-500 text-center mb-4 font-medium bg-gray-50 dark:bg-slate-700 inline-block px-3 py-1 rounded-full mx-auto">
                   {formatDateDisplay(startDate)} - {formatDateDisplay(endDate)}
                 </p>

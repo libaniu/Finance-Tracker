@@ -1,26 +1,56 @@
-import type { Metadata, Viewport } from "next";
+import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import { ThemeProvider } from "next-themes";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Myllet",
-  description: "Simple Personal Finance Tracker",
+  // Ganti dengan URL Vercel kamu yang sebenarnya
+  metadataBase: new URL("https://wallet-bice-beta.vercel.app"),
+  title: {
+    default: "Simple Personal Finance Tracker",
+    template: "%s | Myllet",
+  },
+  description:
+    "Kelola keuangan pribadi, catat pengeluaran harian, dan analisis budget dengan bantuan AI Financial Advisor.",
+  keywords: [
+    "finance tracker",
+    "catat keuangan",
+    "expense tracker",
+    "money manager",
+    "aplikasi keuangan",
+    "Myllet",
+  ],
+  authors: [{ name: "Fahmi Nabil" }],
+  creator: "Fahmi Nabil",
+
+  // Konfigurasi untuk Social Media (Open Graph)
+  openGraph: {
+    title: "Myllet - Smart Finance Tracker",
+    description: "Aplikasi pencatat keuangan cerdas dengan AI Advisor.",
+    url: "https://wallet-bice-beta.vercel.app",
+    siteName: "Myllet",
+    locale: "id_ID",
+    type: "website",
+  },
+
+  // Konfigurasi untuk Twitter Card
+  twitter: {
+    card: "summary_large_image",
+    title: "Myllet - Smart Finance Tracker",
+    description: "Catat dan pantau keuanganmu dengan mudah.",
+  },
+
+  // Konfigurasi Robots (agar di-index Google)
+  robots: {
+    index: true,
+    follow: true,
+  },
   manifest: "/manifest.json",
   icons: {
     icon: "/icon-192x192.png",
     apple: "/icon-192x192.png",
   },
-};
-
-export const viewport: Viewport = {
-  themeColor: "#2563eb",
-  width: "device-width",
-  initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
 };
 
 export default function RootLayout({
@@ -29,18 +59,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          {/* Konten website (children) langsung dimasukkan di sini */}
-          {children}
-        </ThemeProvider>
-      </body>
+    <html lang="en">
+      <body className={inter.className}>{children}</body>
     </html>
   );
 }
