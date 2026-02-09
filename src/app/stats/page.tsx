@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
+import { useRouter } from "next/navigation"; // Router untuk redirect
 import {
   PieChart as PieIcon,
   Home,
@@ -51,6 +52,10 @@ const CATEGORY_COLORS = [
 ];
 
 export default function StatsPage() {
+  // --- AUTH STATE ---
+  const [user, setUser] = useState<any>(null);
+  const router = useRouter();
+
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -59,31 +64,46 @@ export default function StatsPage() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
+  // --- 1. AUTH CHECK & INIT DATA ---
   useEffect(() => {
-    // 1. Logic Pintar untuk Default Tanggal
-    const now = new Date();
-    const currentDay = now.getDate();
-    let start, end;
+    const initPage = async () => {
+      // A. Cek User Login
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        router.push("/login");
+        return;
+      }
+      setUser(user);
 
-    if (currentDay >= 20) {
-      start = new Date(now.getFullYear(), now.getMonth(), 20);
-      end = now;
-    } else {
-      start = new Date(now.getFullYear(), now.getMonth() - 1, 20);
-      end = now;
-    }
+      // B. Logic Pintar untuk Default Tanggal (Hanya jalan sekali saat mount)
+      const now = new Date();
+      const currentDay = now.getDate();
+      let start, end;
 
-    const formatToInput = (date: Date) => {
-      const offset = date.getTimezoneOffset();
-      const localDate = new Date(date.getTime() - offset * 60 * 1000);
-      return localDate.toISOString().split("T")[0];
+      if (currentDay >= 20) {
+        start = new Date(now.getFullYear(), now.getMonth(), 20);
+        end = now;
+      } else {
+        start = new Date(now.getFullYear(), now.getMonth() - 1, 20);
+        end = now;
+      }
+
+      const formatToInput = (date: Date) => {
+        const offset = date.getTimezoneOffset();
+        const localDate = new Date(date.getTime() - offset * 60 * 1000);
+        return localDate.toISOString().split("T")[0];
+      };
+
+      setStartDate(formatToInput(start));
+      setEndDate(formatToInput(end));
+
+      // C. Fetch Data (Otomatis terfilter by User ID via RLS Supabase)
+      await fetchData();
     };
 
-    setStartDate(formatToInput(start));
-    setEndDate(formatToInput(end));
-
-    fetchData();
-  }, []);
+    initPage();
+  }, [router]);
 
   const fetchData = async () => {
     try {
@@ -168,7 +188,7 @@ export default function StatsPage() {
     const grouped = filteredTransactions
       .filter((t) => t.type === type)
       .reduce((acc: any, curr) => {
-        const cat = curr.category || "Others";
+        const cat = curr.category || "Lainnya";
         if (!acc[cat]) acc[cat] = 0;
         acc[cat] += curr.amount;
         return acc;
@@ -185,7 +205,7 @@ export default function StatsPage() {
       const othersValue = sortedData
         .slice(5)
         .reduce((sum, item) => sum + item.value, 0);
-      return [...top5, { name: "Others", value: othersValue }];
+      return [...top5, { name: "Lainnya", value: othersValue }];
     }
 
     return sortedData;
@@ -200,8 +220,8 @@ export default function StatsPage() {
     .reduce((acc, t) => acc + t.amount, 0);
 
   const summaryData = [
-    { name: "Income", value: totalIncome },
-    { name: "Expense", value: totalExpense },
+    { name: "Pemasukan", value: totalIncome },
+    { name: "Pengeluaran", value: totalExpense },
   ];
 
   const expenseChartData = processChartData("expense");
@@ -212,7 +232,7 @@ export default function StatsPage() {
     filteredTransactions
       .filter((t) => t.type === "expense")
       .reduce((acc: any, curr) => {
-        const cat = curr.category || "Others";
+        const cat = curr.category || "Lainnya";
         acc[cat] = (acc[cat] || 0) + curr.amount;
         return acc;
       }, {}),
@@ -228,9 +248,18 @@ export default function StatsPage() {
     });
   };
 
+  // Jika belum login / sedang loading user
+  if (!user) {
+    return (
+        <div className="flex h-screen w-full items-center justify-center bg-slate-50 dark:bg-slate-900">
+            <Loader2 className="animate-spin text-blue-600" size={40} />
+        </div>
+    );
+  }
+
   return (
     <div className="bg-slate-50 dark:bg-slate-900 min-h-screen flex justify-center">
-      <div className="fixed inset-0 w-full max-w-md bg-slate-50 dark:bg-slate-900 h-dvh flex flex-col overflow-hidden shadow-2xl overscroll-none mx-auto">
+      <div className="fixed inset-0 w-full max-w-md bg-slate-50 dark:bg-slate-900 h-dvh flex flex-col overflow-hidden sm:shadow-2xl overscroll-none mx-auto">
         {/* HEADER */}
         <header className="flex-none bg-linear-to-br from-blue-600 to-cyan-600 dark:from-blue-900 dark:to-cyan-950 px-6 pt-12 pb-10 rounded-b-[3rem] text-white relative z-10 shadow-xl overflow-hidden">
           {/* Decorative Background */}
@@ -246,9 +275,7 @@ export default function StatsPage() {
                 >
                   <ArrowLeft size={20} />
                 </Link>
-                <h1 className="text-2xl font-bold tracking-tight">
-                  Statistics
-                </h1>
+                <h1 className="text-2xl font-bold tracking-tight">Statistik</h1>
               </div>
 
               <button
@@ -265,7 +292,7 @@ export default function StatsPage() {
               <div className="flex items-center gap-2 mb-2">
                 <Calendar size={14} className="text-indigo-100" />
                 <p className="text-[10px] text-indigo-100 font-medium uppercase tracking-wider">
-                  Custom Period
+                  Periode Kustom
                 </p>
               </div>
 
@@ -303,10 +330,10 @@ export default function StatsPage() {
           ) : filteredTransactions.length === 0 ? (
             <div className="text-center py-20">
               <p className="text-gray-400 dark:text-slate-500 text-sm mb-2">
-                No transactions found.
+                Tidak ada transaksi ditemukan.
               </p>
               <p className="text-xs text-gray-300 dark:text-slate-400">
-                Try adjusting the dates.
+                Coba sesuaikan tanggalnya.
               </p>
             </div>
           ) : (
@@ -314,7 +341,7 @@ export default function StatsPage() {
               {/* 1. FINANCIAL SUMMARY */}
               <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm">
                 <h2 className="font-bold text-gray-800 dark:text-slate-100 mb-1 text-center">
-                  Financial Overview
+                  Ringkasan Keuangan
                 </h2>
                 <p className="text-xs text-gray-400 dark:text-slate-500 text-center mb-4 font-medium bg-gray-50 dark:bg-slate-700 inline-block px-3 py-1 rounded-full mx-auto">
                   {formatDateDisplay(startDate)} - {formatDateDisplay(endDate)}
@@ -360,7 +387,7 @@ export default function StatsPage() {
               {dailyTrendData.length > 0 && (
                 <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm">
                   <h3 className="font-bold text-gray-800 dark:text-slate-100 mb-4 text-center">
-                    Daily Trend
+                    Tren Harian
                   </h3>
                   <div className="h-64 w-full">
                     <ResponsiveContainer width="100%" height="100%">
@@ -414,14 +441,14 @@ export default function StatsPage() {
                         />
                         <Bar
                           dataKey="income"
-                          name="Income"
+                          name="Pemasukan"
                           fill="#10b981"
                           radius={[4, 4, 0, 0]}
                           maxBarSize={40}
                         />
                         <Bar
                           dataKey="expense"
-                          name="Expense"
+                          name="Pengeluaran"
                           fill="#ef4444"
                           radius={[4, 4, 0, 0]}
                           maxBarSize={40}
@@ -436,7 +463,7 @@ export default function StatsPage() {
               {expenseChartData.length > 0 && (
                 <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm">
                   <h3 className="font-bold text-gray-800 dark:text-slate-100 mb-4 text-center">
-                    Expense Breakdown
+                    Rincian Pengeluaran
                   </h3>
 
                   {/* GRAFIK */}
@@ -529,7 +556,7 @@ export default function StatsPage() {
               {incomeChartData.length > 0 && (
                 <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm">
                   <h3 className="font-bold text-gray-800 dark:text-slate-100 mb-4 text-center">
-                    Income Sources
+                    Sumber Pemasukan
                   </h3>
                   <div className="h-56 w-full">
                     <ResponsiveContainer width="100%" height="100%">
@@ -589,7 +616,7 @@ export default function StatsPage() {
               <span
                 className={`text-sm font-medium overflow-hidden whitespace-nowrap transition-all duration-300 ${isScrolled ? "max-w-0 opacity-0" : "max-w-xs opacity-100 ml-2"}`}
               >
-                Home
+                Beranda
               </span>
             </Link>
             <button
@@ -604,7 +631,7 @@ export default function StatsPage() {
               <span
                 className={`text-sm font-bold overflow-hidden whitespace-nowrap transition-all duration-300 ${isScrolled ? "max-w-0 opacity-0" : "max-w-xs opacity-100 ml-2"}`}
               >
-                Stats
+                Statistik
               </span>
             </button>
           </nav>

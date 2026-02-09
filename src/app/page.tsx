@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import ReactMarkdown from "react-markdown";
+import { useRouter } from "next/navigation";
 import {
   PieChart,
   Plus,
@@ -24,10 +25,9 @@ import {
   AlertCircle,
   ChevronDown,
   Filter,
-  // --- ICON UPDATE ---
   CircleArrowUp,
   CircleArrowDown,
-  // --- ICON KATEGORI ---
+  LogOut,
   Utensils,
   Car,
   ShoppingBag,
@@ -59,28 +59,32 @@ interface ToastState {
 }
 
 const EXPENSE_CATEGORIES = [
-  "Food & Beverage",
-  "Transportation",
-  "Shopping",
-  "Bills & Utilities",
-  "Entertainment",
-  "Health",
-  "Invest",
-  "Others",
+  "Makanan & Minuman",
+  "Transportasi",
+  "Belanja",
+  "Tagihan & Utilitas",
+  "Hiburan",
+  "Kesehatan",
+  "Investasi",
+  "Lainnya",
 ];
-const INCOME_CATEGORIES = ["Salary", "Bonus", "Gift", "Investment", "Others"];
+const INCOME_CATEGORIES = ["Gaji", "Bonus", "Hadiah", "Investasi", "Lainnya"];
 
 const ITEMS_PER_PAGE = 20;
 
-// --- HELPER: ICON KATEGORI DINAMIS ---
 const getCategoryIcon = (category: string, type: "income" | "expense") => {
   if (type === "income") {
     switch (category) {
       case "Salary":
+      case "Gaji":
         return <Banknote size={20} />;
       case "Bonus":
         return <Gift size={20} />;
+      case "Gift":
+      case "Hadiah":
+        return <Gift size={20} />;
       case "Investment":
+      case "Investasi":
         return <TrendingUp size={20} />;
       default:
         return <CircleArrowUp size={20} />;
@@ -88,18 +92,25 @@ const getCategoryIcon = (category: string, type: "income" | "expense") => {
   } else {
     switch (category) {
       case "Food & Beverage":
+      case "Makanan & Minuman":
         return <Utensils size={20} />;
       case "Transportation":
+      case "Transportasi":
         return <Car size={20} />;
       case "Shopping":
+      case "Belanja":
         return <ShoppingBag size={20} />;
       case "Bills & Utilities":
+      case "Tagihan & Utilitas":
         return <Zap size={20} />;
       case "Entertainment":
+      case "Hiburan":
         return <Film size={20} />;
       case "Health":
+      case "Kesehatan":
         return <HeartPulse size={20} />;
       case "Invest":
+      case "Investasi":
         return <TrendingUp size={20} />;
       default:
         return <MoreHorizontal size={20} />;
@@ -107,7 +118,6 @@ const getCategoryIcon = (category: string, type: "income" | "expense") => {
   }
 };
 
-// --- HELPER: FORMAT HEADER TANGGAL PINTAR ---
 const getGroupHeaderDate = (dateString: string) => {
   const date = new Date(dateString);
   const today = new Date();
@@ -130,6 +140,9 @@ const getGroupHeaderDate = (dateString: string) => {
 };
 
 export default function HomePage() {
+  const [user, setUser] = useState<any>(null);
+  const router = useRouter();
+
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [summary, setSummary] = useState({ income: 0, expense: 0, balance: 0 });
   const [isScrolled, setIsScrolled] = useState(false);
@@ -148,6 +161,7 @@ export default function HomePage() {
 
   const [monthlyBudget, setMonthlyBudget] = useState(0);
   const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [tempBudget, setTempBudget] = useState("");
 
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -181,6 +195,25 @@ export default function HomePage() {
 
   const scrollToTop = () => {
     mainRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    const checkUser = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        router.push("/login");
+      } else {
+        setUser(user);
+      }
+    };
+    checkUser();
+  }, [router]);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.push("/login");
   };
 
   const fetchSummary = useCallback(async () => {
@@ -282,11 +315,13 @@ export default function HomePage() {
   }, []);
 
   useEffect(() => {
-    setPage(0);
-    setHasMore(true);
-    fetchSummary();
-    fetchTransactions(0, true);
-  }, [searchQuery, selectedMonth, fetchTransactions, fetchSummary]);
+    if (user) {
+      setPage(0);
+      setHasMore(true);
+      fetchSummary();
+      fetchTransactions(0, true);
+    }
+  }, [searchQuery, selectedMonth, fetchTransactions, fetchSummary, user]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -360,7 +395,7 @@ export default function HomePage() {
     const value = Number(tempBudget.replace(/\D/g, ""));
     if (value > summary.income) {
       showToast(
-        `Budget melebihi Income (${formatCurrency(summary.income)})`,
+        `Anggaran melebihi Pemasukan (${formatCurrency(summary.income)})`,
         "error",
       );
       return;
@@ -368,7 +403,7 @@ export default function HomePage() {
     setMonthlyBudget(value);
     localStorage.setItem("monthlyBudget", value.toString());
     setIsBudgetModalOpen(false);
-    showToast("Budget updated!", "success");
+    showToast("Anggaran diperbarui!", "success");
   };
 
   const budgetPercentage =
@@ -398,13 +433,12 @@ export default function HomePage() {
     }
   });
 
-  // --- GROUPING LOGIC (BY LOCAL DATE) ---
   const groupedTransactionsList = useMemo(() => {
     const groups: { date: string; items: Transaction[] }[] = [];
 
     processedTransactions.forEach((transaction) => {
       const tDate = new Date(transaction.date);
-      const dateKey = tDate.toLocaleDateString("en-CA"); // YYYY-MM-DD Local
+      const dateKey = tDate.toLocaleDateString("en-CA");
 
       const lastGroup = groups[groups.length - 1];
       const lastGroupKey = lastGroup
@@ -449,17 +483,26 @@ export default function HomePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.title || !formData.amount || !formData.date) return;
+
+    if (!user) {
+      showToast("Sesi berakhir. Silakan login kembali.", "error");
+      return;
+    }
+
     setIsSubmitting(true);
     const now = new Date();
     const selectedDate = new Date(formData.date);
     selectedDate.setHours(now.getHours(), now.getMinutes(), now.getSeconds());
+
     const payload = {
       title: formData.title,
       amount: Number(formData.amount),
       type: formData.type,
-      category: formData.category || "Others",
+      category: formData.category || "Lainnya",
       date: selectedDate.toISOString(),
+      user_id: user.id,
     };
+
     try {
       if (editingId) {
         const { error } = await supabase
@@ -467,18 +510,18 @@ export default function HomePage() {
           .update(payload)
           .eq("id", editingId);
         if (error) throw error;
-        showToast("Transaction updated!", "success");
+        showToast("Transaksi diperbarui!", "success");
       } else {
         const { error } = await supabase.from("transactions").insert([payload]);
         if (error) throw error;
-        showToast("Transaction saved!", "success");
+        showToast("Transaksi disimpan!", "success");
       }
       resetForm();
       fetchSummary();
       setPage(0);
       fetchTransactions(0, true);
     } catch (error) {
-      showToast("Failed to save.", "error");
+      showToast("Gagal menyimpan.", "error");
     } finally {
       setIsSubmitting(false);
     }
@@ -496,9 +539,9 @@ export default function HomePage() {
       fetchSummary();
       setTransactions((prev) => prev.filter((t) => t.id !== deleteModal.id));
 
-      showToast("Deleted successfully.", "success");
+      showToast("Berhasil dihapus.", "success");
     } catch (error) {
-      showToast("Failed to delete.", "error");
+      showToast("Gagal menghapus.", "error");
     } finally {
       setDeleteModal({ show: false, id: null });
     }
@@ -531,43 +574,73 @@ export default function HomePage() {
       minute: "2-digit",
     });
 
+  if (!user) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-slate-50 dark:bg-slate-900">
+        <Loader2 className="animate-spin text-blue-600" size={40} />
+      </div>
+    );
+  }
+
   return (
     <div className="bg-slate-50 dark:bg-slate-900 min-h-screen flex justify-center">
       <div className="fixed inset-0 w-full max-w-md bg-slate-50 dark:bg-slate-900 h-dvh flex flex-col overflow-hidden sm:shadow-2xl overscroll-none mx-auto">
-        {/* HEADER */}
-        <header className="flex-none bg-linear-to-br from-blue-600 to-cyan-600 dark:from-blue-900 dark:to-cyan-950 px-6 pt-8 pb-8 rounded-b-[2.5rem] text-white relative z-10 shadow-xl overflow-hidden">
-          {/* Decorative Background */}
-          <div className="absolute top-[-20%] right-[-10%] w-72 h-72 bg-white/10 rounded-full blur-3xl pointer-events-none"></div>
-          <div className="absolute bottom-[-10%] left-[-10%] w-48 h-48 bg-blue-400/20 rounded-full blur-2xl pointer-events-none"></div>
+        {/* HEADER DIPERBARUI: LEBIH KECIL & COMPACT */}
+        {/* Mengurangi padding vertikal (py-6) dan border radius (rounded-b-[2rem]) */}
+        <header className="flex-none bg-linear-to-br from-blue-600 to-cyan-600 dark:from-blue-900 dark:to-cyan-950 px-6 pt-6 pb-6 rounded-b-4xl text-white relative z-10 shadow-xl overflow-hidden">
+          {/* Decorative Background - Ukuran Diperkecil Sedikit */}
+          <div className="absolute top-[-20%] right-[-10%] w-64 h-64 bg-white/10 rounded-full blur-3xl pointer-events-none"></div>
+          <div className="absolute bottom-[-10%] left-[-10%] w-40 h-40 bg-blue-400/20 rounded-full blur-2xl pointer-events-none"></div>
 
           <div className="relative z-10">
-            <div className="flex justify-between items-start mb-6">
-              <div>
-                <p className="text-indigo-100 text-sm font-medium mb-1 opacity-90">
-                  Total Balance
+            {/* User & Logout - Margin Bawah Dikurangi (mb-4) */}
+            <div className="flex justify-between items-start mb-4">
+              <div className="flex items-center gap-2">
+                <p className="text-blue-200 text-sm font-medium">
+                  Selamat datang,
                 </p>
-                <h1 className="text-4xl font-extrabold tracking-tight">
+                <h2 className="text-lg font-bold truncate max-w-50 leading-tight">
+                  {user?.user_metadata?.display_name || "User"}
+                </h2>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="bg-white/10 p-2 rounded-full backdrop-blur-sm hover:bg-white/20 transition text-blue-100 active:scale-95"
+                title="Logout"
+              >
+                <LogOut size={16} />
+              </button>
+            </div>
+
+            {/* Balance Section - Margin Bawah Dikurangi (mb-4) */}
+            <div className="flex justify-between items-center mb-5">
+              <div>
+                <p className="text-indigo-100 text-xs font-semibold mb-0.5 opacity-90">
+                  Total Saldo
+                </p>
+                {/* Font Size Dikurangi (text-3xl) */}
+                <h1 className="text-3xl font-extrabold tracking-tight">
                   {isLoading ? (
-                    <div className="h-10 w-40 bg-white/20 rounded animate-pulse"></div>
+                    <div className="h-8 w-32 bg-white/20 rounded animate-pulse"></div>
                   ) : (
                     formatCurrency(summary.balance)
                   )}
                 </h1>
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 <button
                   onClick={handleAskAI}
                   disabled={isAnalyzing}
-                  className="bg-white/15 p-2.5 rounded-2xl backdrop-blur-md hover:bg-white/25 transition active:scale-95 disabled:opacity-50 relative group border border-white/10 shadow-sm"
+                  className="bg-white/15 p-2 rounded-xl backdrop-blur-md hover:bg-white/25 transition active:scale-95 disabled:opacity-50 relative group border border-white/10 shadow-sm"
                 >
                   {isAnalyzing ? (
-                    <Loader2 size={20} className="animate-spin" />
+                    <Loader2 size={18} className="animate-spin" />
                   ) : (
-                    <Bot size={20} />
+                    <Bot size={18} />
                   )}
                   {!isAnalyzing && (
-                    <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-green-400 rounded-full animate-pulse border-2 border-blue-600"></span>
+                    <span className="absolute -top-1 -right-1 w-2 h-2 bg-green-400 rounded-full animate-pulse border-2 border-blue-600"></span>
                   )}
                 </button>
 
@@ -576,36 +649,39 @@ export default function HomePage() {
                     setTempBudget(monthlyBudget.toString());
                     setIsBudgetModalOpen(true);
                   }}
-                  className="bg-white/15 p-2.5 rounded-2xl backdrop-blur-md hover:bg-white/25 transition active:scale-95 border border-white/10 shadow-sm"
+                  className="bg-white/15 p-2 rounded-xl backdrop-blur-md hover:bg-white/25 transition active:scale-95 border border-white/10 shadow-sm"
                 >
-                  <Settings size={20} />
+                  <Settings size={18} />
                 </button>
               </div>
             </div>
 
+            {/* Income/Expense Cards - Padding Dikurangi (p-3) */}
             <div className="grid grid-cols-2 gap-3">
-              {/* Income Card */}
-              <div className="bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-2xl flex flex-col justify-center relative overflow-hidden group hover:bg-white/15 transition-colors">
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="bg-green-400/20 p-2 rounded-full text-green-300 shrink-0">
-                    <CircleArrowUp size={18} />
+              <div className="bg-white/10 backdrop-blur-md border border-white/20 p-3 rounded-xl flex flex-col justify-center relative overflow-hidden group hover:bg-white/15 transition-colors">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="bg-green-400/20 p-1.5 rounded-full text-green-300 shrink-0">
+                    <CircleArrowUp size={14} />
                   </div>
-                  <p className="text-xs text-indigo-100 font-medium">Income</p>
+                  <p className="text-[10px] text-indigo-100 font-medium uppercase tracking-wide">
+                    Pemasukan
+                  </p>
                 </div>
-                <p className="font-bold text-lg text-white truncate tracking-wide">
+                <p className="font-bold text-base text-white truncate tracking-wide">
                   {isLoading ? "..." : formatCurrency(summary.income)}
                 </p>
               </div>
 
-              {/* Expense Card */}
-              <div className="bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-2xl flex flex-col justify-center relative overflow-hidden group hover:bg-white/15 transition-colors">
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="bg-red-400/20 p-2 rounded-full text-red-300 shrink-0">
-                    <CircleArrowDown size={18} />
+              <div className="bg-white/10 backdrop-blur-md border border-white/20 p-3 rounded-xl flex flex-col justify-center relative overflow-hidden group hover:bg-white/15 transition-colors">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="bg-red-400/20 p-1.5 rounded-full text-red-300 shrink-0">
+                    <CircleArrowDown size={14} />
                   </div>
-                  <p className="text-xs text-indigo-100 font-medium">Expense</p>
+                  <p className="text-[10px] text-indigo-100 font-medium uppercase tracking-wide">
+                    Pengeluaran
+                  </p>
                 </div>
-                <p className="font-bold text-lg text-white truncate tracking-wide">
+                <p className="font-bold text-base text-white truncate tracking-wide">
                   {isLoading ? "..." : formatCurrency(summary.expense)}
                 </p>
               </div>
@@ -623,10 +699,10 @@ export default function HomePage() {
             <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm mb-6">
               <div className="flex justify-between items-center mb-2">
                 <span className="text-xs font-bold text-gray-700 dark:text-slate-200">
-                  Monthly Budget
+                  Anggaran Bulanan
                 </span>
                 <span className="text-xs font-medium text-gray-700 dark:text-slate-200">
-                  {Math.round(budgetPercentage)}% used
+                  {Math.round(budgetPercentage)}% terpakai
                 </span>
               </div>
               <div className="h-3 w-full bg-gray-100 dark:bg-slate-700 rounded-full overflow-hidden">
@@ -636,27 +712,11 @@ export default function HomePage() {
                 ></div>
               </div>
               <div className="flex justify-between mt-2 text-[10px] text-gray-400 dark:text-slate-500">
-                <span>Used: {formatCurrency(summary.expense)}</span>
-                <span>Limit: {formatCurrency(monthlyBudget)}</span>
+                <span>Terpakai: {formatCurrency(summary.expense)}</span>
+                <span>Batas: {formatCurrency(monthlyBudget)}</span>
               </div>
             </div>
           )}
-
-          <div className="mb-4">
-            <div className="relative">
-              <Search
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500"
-                size={18}
-              />
-              <input
-                type="text"
-                placeholder="Search transaction..."
-                className="w-full bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 pl-10 pr-4 py-3 rounded-xl text-base font-medium focus:outline-none focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900 shadow-sm placeholder:text-gray-300 dark:placeholder:text-slate-500 text-gray-900 dark:text-slate-100"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-          </div>
 
           <div className="flex flex-row gap-2 mb-6 w-full">
             <div className="relative w-[65%]">
@@ -680,10 +740,10 @@ export default function HomePage() {
                 onChange={(e) => setSortBy(e.target.value)}
                 className="appearance-none w-full bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-300 text-xs font-semibold pl-9 pr-8 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900 shadow-sm truncate"
               >
-                <option value="date-desc">Newest</option>
-                <option value="date-asc">Oldest</option>
-                <option value="amount-high">Highest</option>
-                <option value="amount-low">Lowest</option>
+                <option value="date-desc">Terbaru</option>
+                <option value="date-asc">Terlama</option>
+                <option value="amount-high">Tertinggi</option>
+                <option value="amount-low">Terendah</option>
               </select>
               <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
                 <ChevronDown size={14} />
@@ -719,10 +779,11 @@ export default function HomePage() {
                 />
               </div>
               <p className="text-gray-500 dark:text-slate-400 font-medium">
-                No transactions yet
+                Belum ada transaksi
               </p>
               <p className="text-sm text-gray-400 dark:text-slate-500 mt-1 max-w-50">
-                Start adding your expenses or income to see them here.
+                Mulai tambahkan pengeluaran atau pemasukan Anda untuk melihatnya
+                di sini.
               </p>
             </div>
           ) : (
@@ -754,7 +815,7 @@ export default function HomePage() {
                                 {item.title}
                               </h3>
                               <span className="text-xs text-gray-400 dark:text-slate-500 truncate">
-                                {item.category || "Others"}
+                                {item.category || "Lainnya"}
                               </span>
                             </div>
                           </div>
@@ -808,7 +869,7 @@ export default function HomePage() {
                   {isLoadingMore && (
                     <div className="flex items-center gap-2 text-sm text-gray-400 dark:text-slate-500">
                       <Loader2 size={16} className="animate-spin" />
-                      Loading more...
+                      Memuat lebih banyak...
                     </div>
                   )}
                 </div>
@@ -817,7 +878,15 @@ export default function HomePage() {
           )}
         </main>
 
-        {/* FAB (Floating Action Button) */}
+        <div className="absolute bottom-28 left-6 z-50">
+          <button
+            onClick={() => setIsSearchOpen(true)}
+            className="bg-linear-to-r from-blue-600 to-cyan-600 text-white h-14 w-14 rounded-full shadow-lg shadow-blue-600/40 dark:shadow-blue-900/40 flex items-center justify-center transform transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-blue-600/50 active:scale-90"
+          >
+            <Search size={28} />
+          </button>
+        </div>
+
         <div className="absolute bottom-28 right-6 z-50">
           <button
             onClick={() => {
@@ -845,7 +914,7 @@ export default function HomePage() {
               <span
                 className={`text-sm font-bold overflow-hidden whitespace-nowrap transition-all duration-300 ${isScrolled ? "max-w-0 opacity-0" : "max-w-xs opacity-100 ml-2"}`}
               >
-                Home
+                Beranda
               </span>
             </button>
             <Link
@@ -856,13 +925,12 @@ export default function HomePage() {
               <span
                 className={`text-sm font-medium overflow-hidden whitespace-nowrap transition-all duration-300 ${isScrolled ? "max-w-0 opacity-0" : "max-w-xs opacity-100 ml-2"}`}
               >
-                Stats
+                Statistik
               </span>
             </Link>
           </nav>
         </div>
 
-        {/* --- AI ADVISOR MODAL --- */}
         {isAiModalOpen && (
           <div
             className="absolute inset-0 z-100 flex items-center justify-center px-4 bg-black/60 backdrop-blur-sm"
@@ -927,7 +995,42 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* --- BUDGET MODAL --- */}
+        {isSearchOpen && (
+          <div
+            className="absolute inset-0 z-80 flex items-center justify-center px-4 bg-black/60 backdrop-blur-sm"
+            onClick={() => setIsSearchOpen(false)}
+          >
+            <div
+              className="bg-white dark:bg-slate-800 w-full max-w-xs p-6 rounded-2xl shadow-2xl relative z-10 animate-in zoom-in-95 duration-200"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="text-lg font-bold text-gray-900 dark:text-slate-100 mb-4 text-center">
+                Cari Transaksi
+              </h3>
+              <div className="relative mb-4">
+                <Search
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                  size={18}
+                />
+                <input
+                  type="text"
+                  className="w-full bg-gray-50 dark:bg-slate-700 p-3 pl-10 rounded-xl font-medium text-gray-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900"
+                  placeholder="Cari berdasarkan judul..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  autoFocus
+                />
+              </div>
+              <button
+                onClick={() => setIsSearchOpen(false)}
+                className="w-full bg-blue-600 dark:bg-blue-700 text-white py-3 rounded-xl font-bold hover:bg-blue-700 dark:hover:bg-blue-600 transition active:scale-95"
+              >
+                Selesai
+              </button>
+            </div>
+          </div>
+        )}
+
         {isBudgetModalOpen && (
           <div
             className="absolute inset-0 z-80 flex items-center justify-center px-4 bg-black/60 backdrop-blur-sm"
@@ -938,7 +1041,7 @@ export default function HomePage() {
               onClick={(e) => e.stopPropagation()}
             >
               <h3 className="text-lg font-bold text-gray-900 dark:text-slate-100 mb-4 text-center">
-                Set Monthly Budget
+                Atur Anggaran Bulanan
               </h3>
               <input
                 type="text"
@@ -965,13 +1068,12 @@ export default function HomePage() {
                 onClick={saveBudget}
                 className="w-full bg-blue-600 dark:bg-blue-700 text-white py-3 rounded-xl font-bold hover:bg-blue-700 dark:hover:bg-blue-600 transition active:scale-95"
               >
-                Save Budget
+                Simpan Anggaran
               </button>
             </div>
           </div>
         )}
 
-        {/* TOAST */}
         {toast.show && (
           <div
             className={`fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-90 transition-all duration-300 ${
@@ -1010,7 +1112,7 @@ export default function HomePage() {
                 {getCategoryIcon(detailModal.category, detailModal.type)}
               </div>
               <h3 className="text-gray-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wide mb-1">
-                {detailModal.type === "income" ? "Income" : "Expense"}
+                {detailModal.type === "income" ? "Pemasukan" : "Pengeluaran"}
               </h3>
               <h2
                 className={`text-2xl font-bold mb-6 ${detailModal.type === "income" ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}
@@ -1021,7 +1123,7 @@ export default function HomePage() {
               <div className="w-full space-y-4 bg-gray-50 dark:bg-slate-700 p-4 rounded-xl border border-gray-100 dark:border-slate-600">
                 <div className="flex justify-between items-start">
                   <span className="text-gray-400 dark:text-slate-400 text-xs font-medium">
-                    Title
+                    Judul
                   </span>
                   <span className="text-gray-800 dark:text-slate-100 text-sm font-bold text-right max-w-37.5 wrap-break-word">
                     {detailModal.title}
@@ -1031,7 +1133,7 @@ export default function HomePage() {
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-1.5 text-gray-400 dark:text-slate-400">
                     <Tag size={14} />
-                    <span className="text-xs font-medium">Category</span>
+                    <span className="text-xs font-medium">Kategori</span>
                   </div>
                   <span className="text-gray-800 dark:text-slate-100 text-sm font-semibold">
                     {detailModal.category || "-"}
@@ -1040,7 +1142,7 @@ export default function HomePage() {
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-1.5 text-gray-400 dark:text-slate-400">
                     <Calendar size={14} />
-                    <span className="text-xs font-medium">Date</span>
+                    <span className="text-xs font-medium">Tanggal</span>
                   </div>
                   <span className="text-gray-800 dark:text-slate-100 text-sm font-semibold">
                     {formatFullDate(detailModal.date)}
@@ -1049,7 +1151,7 @@ export default function HomePage() {
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-1.5 text-gray-400 dark:text-slate-400">
                     <Clock size={14} />
-                    <span className="text-xs font-medium">Time</span>
+                    <span className="text-xs font-medium">Waktu</span>
                   </div>
                   <span className="text-gray-800 dark:text-slate-100 text-sm font-semibold">
                     {formatTime(detailModal.date)}
@@ -1060,7 +1162,7 @@ export default function HomePage() {
                 onClick={() => setDetailModal(null)}
                 className="mt-6 w-full bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-100 py-3 rounded-xl font-bold text-sm hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
               >
-                Close
+                Tutup
               </button>
             </div>
           </div>
@@ -1078,20 +1180,20 @@ export default function HomePage() {
                   <AlertTriangle size={32} />
                 </div>
                 <h3 className="text-lg font-bold text-gray-900 dark:text-slate-100 mb-2">
-                  Delete Transaction?
+                  Hapus Transaksi?
                 </h3>
                 <div className="flex gap-3 w-full mt-4">
                   <button
                     onClick={() => setDeleteModal({ show: false, id: null })}
                     className="flex-1 py-2.5 rounded-xl text-gray-700 dark:text-slate-200 font-medium hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
                   >
-                    Cancel
+                    Batal
                   </button>
                   <button
                     onClick={executeDelete}
                     className="flex-1 py-2.5 rounded-xl bg-red-600 dark:bg-red-700 text-white font-medium hover:bg-red-700 dark:hover:bg-red-600 transition-colors"
                   >
-                    Delete
+                    Hapus
                   </button>
                 </div>
               </div>
@@ -1108,7 +1210,7 @@ export default function HomePage() {
             <div className="bg-white dark:bg-slate-800 w-full max-w-sm rounded-3xl p-6 relative z-10 animate-in zoom-in-95 duration-300 shadow-2xl border border-white/20">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-bold text-gray-800 dark:text-slate-100">
-                  {editingId ? "Edit Transaction" : "New Transaction"}
+                  {editingId ? "Edit Transaksi" : "Transaksi Baru"}
                 </h3>
                 <button
                   onClick={resetForm}
@@ -1118,7 +1220,6 @@ export default function HomePage() {
                 </button>
               </div>
               <form onSubmit={handleSubmit} className="space-y-4">
-                {/* Type Toggle - Compact */}
                 <div className="bg-gray-100 dark:bg-slate-700 p-1 rounded-xl flex">
                   <button
                     type="button"
@@ -1131,7 +1232,7 @@ export default function HomePage() {
                         : "text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200"
                     }`}
                   >
-                    Expense
+                    Pengeluaran
                   </button>
                   <button
                     type="button"
@@ -1142,11 +1243,10 @@ export default function HomePage() {
                         : "text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200"
                     }`}
                   >
-                    Income
+                    Pemasukan
                   </button>
                 </div>
 
-                {/* Amount Input - Big & Center */}
                 <div>
                   <div className="relative">
                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-lg">
@@ -1165,11 +1265,10 @@ export default function HomePage() {
                   </div>
                 </div>
 
-                {/* Title Input */}
                 <div>
                   <input
                     type="text"
-                    placeholder="What is this for?"
+                    placeholder="Untuk apa ini?"
                     className="w-full bg-gray-50 dark:bg-slate-700/50 p-3 rounded-xl font-medium text-gray-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900 placeholder:text-gray-400 text-sm"
                     value={formData.title}
                     onChange={(e) =>
@@ -1179,7 +1278,6 @@ export default function HomePage() {
                   />
                 </div>
 
-                {/* Date & Category Group */}
                 <div className="grid grid-cols-2 gap-3">
                   <div className="relative">
                     <Calendar
@@ -1210,7 +1308,7 @@ export default function HomePage() {
                       required
                     >
                       <option value="" disabled>
-                        Category
+                        Kategori
                       </option>
                       {formData.type === "expense"
                         ? EXPENSE_CATEGORIES.map((cat) => (
@@ -1233,10 +1331,10 @@ export default function HomePage() {
                   className="w-full bg-linear-to-r from-blue-600 to-cyan-600 dark:bg-blue-700 text-white py-3.5 rounded-xl font-bold text-sm mt-2 shadow-lg shadow-blue-600/20 hover:bg-blue-700 active:scale-95 transition-all disabled:opacity-50"
                 >
                   {isSubmitting
-                    ? "Saving..."
+                    ? "Menyimpan..."
                     : editingId
-                      ? "Update Transaction"
-                      : "Save Transaction"}
+                      ? "Perbarui Transaksi"
+                      : "Simpan Transaksi"}
                 </button>
               </form>
             </div>
