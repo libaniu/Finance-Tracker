@@ -780,6 +780,16 @@ export default function HomePage() {
                 onChange={(e) => setSelectedMonth(e.target.value)}
                 className="w-full bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-300 text-xs font-semibold pl-9 pr-2 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900 shadow-sm appearance-none min-w-0 [&::-webkit-calendar-picker-indicator]:opacity-100 [&::-webkit-calendar-picker-indicator]:brightness-0 dark:[&::-webkit-calendar-picker-indicator]:invert"
               />
+              {/* TOMBOL CLEAR (Muncul kalau ada tanggal terpilih) */}
+              {selectedMonth && (
+                <button
+                  onClick={() => setSelectedMonth("")} // Kosongkan state biar tampil semua data
+                  className="absolute right-2 top-1/2 -translate-y-1/2 bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400 p-1.5 rounded-full hover:bg-red-100 dark:hover:bg-red-900 hover:text-red-600 transition-colors"
+                  title="Tampilkan Semua (Hapus Filter)"
+                >
+                  <X size={12} />
+                </button>
+              )}
             </div>
 
             <div className="relative w-[35%]">
