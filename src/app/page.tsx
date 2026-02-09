@@ -878,7 +878,7 @@ export default function HomePage() {
           )}
         </main>
 
-        <div className="absolute bottom-28 left-6 z-50">
+        <div className="absolute bottom-24 left-6 z-50">
           <button
             onClick={() => setIsSearchOpen(true)}
             className="bg-linear-to-r from-blue-600 to-cyan-600 text-white h-14 w-14 rounded-full shadow-lg shadow-blue-600/40 dark:shadow-blue-900/40 flex items-center justify-center transform transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-blue-600/50 active:scale-90"
@@ -887,7 +887,7 @@ export default function HomePage() {
           </button>
         </div>
 
-        <div className="absolute bottom-28 right-6 z-50">
+        <div className="absolute bottom-24 right-6 z-50">
           <button
             onClick={() => {
               resetForm();
@@ -899,7 +899,7 @@ export default function HomePage() {
           </button>
         </div>
 
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-40 w-auto">
+        <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-40 w-auto">
           <nav className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-2xl border border-white/20 dark:border-slate-700 p-1.5 rounded-full flex items-center gap-1 shadow-[0_8px_30px_rgb(0,0,0,0.12)] dark:shadow-black/50 ring-1 ring-black/5">
             <button
               onClick={scrollToTop}

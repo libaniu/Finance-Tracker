@@ -68,8 +68,10 @@ export default function StatsPage() {
   useEffect(() => {
     const initPage = async () => {
       // A. Cek User Login
-      const { data: { user } } = await supabase.auth.getUser();
-      
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
       if (!user) {
         router.push("/login");
         return;
@@ -251,9 +253,9 @@ export default function StatsPage() {
   // Jika belum login / sedang loading user
   if (!user) {
     return (
-        <div className="flex h-screen w-full items-center justify-center bg-slate-50 dark:bg-slate-900">
-            <Loader2 className="animate-spin text-blue-600" size={40} />
-        </div>
+      <div className="flex h-screen w-full items-center justify-center bg-slate-50 dark:bg-slate-900">
+        <Loader2 className="animate-spin text-blue-600" size={40} />
+      </div>
     );
   }
 
@@ -606,7 +608,7 @@ export default function StatsPage() {
         </main>
 
         {/* NAVBAR */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-40 w-auto">
+        <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-40 w-auto">
           <nav className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-2xl border border-white/20 dark:border-slate-700 p-1.5 rounded-full flex items-center gap-1 shadow-[0_8px_30px_rgb(0,0,0,0.12)] dark:shadow-black/50 ring-1 ring-black/5">
             <Link
               href="/"
