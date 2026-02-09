@@ -21,6 +21,7 @@ import {
   Settings,
   Bot,
   Sparkles,
+  Camera, // Pastikan ini ada
   Home,
   AlertCircle,
   ChevronDown,
@@ -172,6 +173,7 @@ export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isScanning, setIsScanning] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
 
   const [deleteModal, setDeleteModal] = useState<{
@@ -478,6 +480,55 @@ export default function HomePage() {
     });
     setEditingId(null);
     setIsDrawerOpen(false);
+  };
+
+  // --- FITUR SCAN STRUK (AI) ---
+  const handleScanReceipt = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      showToast("Ukuran gambar terlalu besar (maks 5MB)", "error");
+      return;
+    }
+
+    setIsScanning(true);
+    showToast("Sedang menganalisis struk...", "success");
+
+    try {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onloadend = async () => {
+        const base64data = reader.result;
+
+        const response = await fetch("/api/scan", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ image: base64data }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) throw new Error(data.error || "Gagal scan");
+
+        setFormData({
+          title: data.title || "",
+          amount: data.amount ? data.amount.toString() : "",
+          category: data.category || "Belanja",
+          date: data.date || new Date().toISOString().split("T")[0],
+          type: "expense",
+        });
+
+        setIsDrawerOpen(true);
+        showToast("Struk berhasil dibaca!", "success");
+      };
+    } catch (error: any) {
+      console.error(error);
+      showToast(error.message || "Gagal memproses gambar.", "error");
+    } finally {
+      setIsScanning(false);
+      e.target.value = "";
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -1212,12 +1263,31 @@ export default function HomePage() {
                 <h3 className="text-lg font-bold text-gray-800 dark:text-slate-100">
                   {editingId ? "Edit Transaksi" : "Transaksi Baru"}
                 </h3>
-                <button
-                  onClick={resetForm}
-                  className="bg-gray-100 dark:bg-slate-700 p-2 rounded-full text-gray-500 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
-                >
-                  <X size={18} />
-                </button>
+                <div className="flex items-center gap-2">
+                  {!editingId && (
+                    <label className="bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 p-2 rounded-full cursor-pointer hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors">
+                      {isScanning ? (
+                        <Loader2 className="animate-spin" size={18} />
+                      ) : (
+                        <Camera size={18} />
+                      )}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        capture="environment"
+                        className="hidden"
+                        onChange={handleScanReceipt}
+                        disabled={isScanning}
+                      />
+                    </label>
+                  )}
+                  <button
+                    onClick={resetForm}
+                    className="bg-gray-100 dark:bg-slate-700 p-2 rounded-full text-gray-500 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
               </div>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="bg-gray-100 dark:bg-slate-700 p-1 rounded-xl flex">
