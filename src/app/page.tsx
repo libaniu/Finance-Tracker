@@ -21,7 +21,7 @@ import {
   Settings,
   Bot,
   Sparkles,
-  Camera, // Pastikan ini ada
+  Camera,
   Home,
   AlertCircle,
   ChevronDown,
@@ -40,6 +40,9 @@ import {
   Banknote,
   Gift,
   Wallet,
+  Headphones,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
@@ -482,7 +485,18 @@ export default function HomePage() {
     setIsDrawerOpen(false);
   };
 
-  // --- FITUR SCAN STRUK (AI) ---
+  const handlePrevMonth = () => {
+    const date = selectedMonth ? new Date(selectedMonth + "-01") : new Date();
+    date.setMonth(date.getMonth() - 1);
+    setSelectedMonth(date.toISOString().slice(0, 7));
+  };
+
+  const handleNextMonth = () => {
+    const date = selectedMonth ? new Date(selectedMonth + "-01") : new Date();
+    date.setMonth(date.getMonth() + 1);
+    setSelectedMonth(date.toISOString().slice(0, 7));
+  };
+
   const handleScanReceipt = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -636,15 +650,12 @@ export default function HomePage() {
   return (
     <div className="bg-slate-50 dark:bg-slate-900 min-h-screen flex justify-center">
       <div className="fixed inset-0 w-full max-w-md bg-slate-50 dark:bg-slate-900 h-dvh flex flex-col overflow-hidden sm:shadow-2xl overscroll-none mx-auto">
-        {/* HEADER DIPERBARUI: LEBIH KECIL & COMPACT */}
-        {/* Mengurangi padding vertikal (py-6) dan border radius (rounded-b-[2rem]) */}
+        {/* HEADER */}
         <header className="flex-none bg-linear-to-br from-blue-600 to-cyan-600 dark:from-blue-900 dark:to-cyan-950 px-6 pt-6 pb-6 rounded-b-4xl text-white relative z-10 shadow-xl overflow-hidden">
-          {/* Decorative Background - Ukuran Diperkecil Sedikit */}
           <div className="absolute top-[-20%] right-[-10%] w-64 h-64 bg-white/10 rounded-full blur-3xl pointer-events-none"></div>
           <div className="absolute bottom-[-10%] left-[-10%] w-40 h-40 bg-blue-400/20 rounded-full blur-2xl pointer-events-none"></div>
 
           <div className="relative z-10">
-            {/* User & Logout - Margin Bawah Dikurangi (mb-4) */}
             <div className="flex justify-between items-start mb-4">
               <div className="flex items-center gap-2">
                 <p className="text-blue-200 text-sm font-medium">
@@ -654,22 +665,30 @@ export default function HomePage() {
                   {user?.user_metadata?.display_name || "User"}
                 </h2>
               </div>
-              <button
-                onClick={handleLogout}
-                className="bg-white/10 p-2 rounded-full backdrop-blur-sm hover:bg-white/20 transition text-blue-100 active:scale-95"
-                title="Logout"
-              >
-                <LogOut size={16} />
-              </button>
+              <div className="flex items-center gap-2">
+                <Link
+                  href="https://www.instagram.com/dn_hay"
+                  target="_blank"
+                  className="bg-white/10 p-2 rounded-full backdrop-blur-sm hover:bg-white/20 transition text-blue-100 active:scale-95"
+                  title="Help Desk"
+                >
+                  <Headphones size={16} />
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="bg-white/10 p-2 rounded-full backdrop-blur-sm hover:bg-white/20 transition text-blue-100 active:scale-95"
+                  title="Logout"
+                >
+                  <LogOut size={16} />
+                </button>
+              </div>
             </div>
 
-            {/* Balance Section - Margin Bawah Dikurangi (mb-4) */}
             <div className="flex justify-between items-center mb-5">
               <div>
-                <p className="text-indigo-100 text-xs font-semibold mb-0.5 opacity-90">
+                <p className="text-indigo-100 text-base font-semibold mb-0.5 opacity-90">
                   Total Saldo
                 </p>
-                {/* Font Size Dikurangi (text-3xl) */}
                 <h1 className="text-3xl font-extrabold tracking-tight">
                   {isLoading ? (
                     <div className="h-8 w-32 bg-white/20 rounded animate-pulse"></div>
@@ -707,7 +726,6 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* Income/Expense Cards - Padding Dikurangi (p-3) */}
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-white/10 backdrop-blur-md border border-white/20 p-3 rounded-xl flex flex-col justify-center relative overflow-hidden group hover:bg-white/15 transition-colors">
                 <div className="flex items-center gap-2 mb-1">
@@ -769,37 +787,63 @@ export default function HomePage() {
             </div>
           )}
 
-          <div className="flex flex-row gap-2 mb-6 w-full">
-            <div className="relative w-[65%]">
-              <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-slate-400 pointer-events-none">
-                <Filter size={14} />
+          {/* FILTER & SORT */}
+          <div className="flex flex-row gap-3 mb-6 w-full">
+            <div className="flex items-center justify-between bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl w-[58%] shadow-sm p-1 relative">
+              <button
+                onClick={handlePrevMonth}
+                className="p-2 text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors shrink-0"
+              >
+                <ChevronLeft size={16} />
+              </button>
+
+              <div className="relative flex-1 text-center px-1 overflow-hidden group">
+                <span className="text-xs font-bold text-gray-700 dark:text-slate-200 truncate block">
+                  {selectedMonth
+                    ? new Date(selectedMonth + "-01").toLocaleDateString(
+                        "id-ID",
+                        {
+                          month: "long",
+                          year: "numeric",
+                        },
+                      )
+                    : "Semua Waktu"}
+                </span>
+                <input
+                  type="month"
+                  value={selectedMonth}
+                  onChange={(e) => setSelectedMonth(e.target.value)}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                />
               </div>
-              <input
-                type="month"
-                value={selectedMonth}
-                onChange={(e) => setSelectedMonth(e.target.value)}
-                className="w-full bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-300 text-xs font-semibold pl-9 pr-2 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900 shadow-sm appearance-none min-w-0 [&::-webkit-calendar-picker-indicator]:opacity-100 [&::-webkit-calendar-picker-indicator]:brightness-0 dark:[&::-webkit-calendar-picker-indicator]:invert"
-              />
-              {/* TOMBOL CLEAR (Muncul kalau ada tanggal terpilih) */}
-              {selectedMonth && (
+
+              <div className="flex items-center shrink-0 relative">
+                {selectedMonth && (
+                  <button
+                    onClick={() => setSelectedMonth("")}
+                    className="p-1 text-gray-300 hover:text-red-500 transition-colors mr-1"
+                    title="Hapus Filter"
+                  >
+                    <X size={14} />
+                  </button>
+                )}
                 <button
-                  onClick={() => setSelectedMonth("")} // Kosongkan state biar tampil semua data
-                  className="absolute right-2 top-1/2 -translate-y-1/2 bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400 p-1.5 rounded-full hover:bg-red-100 dark:hover:bg-red-900 hover:text-red-600 transition-colors"
-                  title="Tampilkan Semua (Hapus Filter)"
+                  onClick={handleNextMonth}
+                  className="p-2 text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
                 >
-                  <X size={12} />
+                  <ChevronRight size={16} />
                 </button>
-              )}
+              </div>
             </div>
 
-            <div className="relative w-[35%]">
+            <div className="relative w-[42%]">
               <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-slate-400 pointer-events-none">
                 <ArrowUpDown size={14} />
               </div>
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="appearance-none w-full bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-300 text-xs font-semibold pl-9 pr-8 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900 shadow-sm truncate"
+                className="appearance-none w-full bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-300 text-xs font-semibold pl-8 pr-7 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900 shadow-sm truncate"
               >
                 <option value="date-desc">Terbaru</option>
                 <option value="date-asc">Terlama</option>
@@ -960,6 +1004,7 @@ export default function HomePage() {
           </button>
         </div>
 
+        {/* BOTTOM NAV */}
         <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-40 w-auto">
           <nav className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-2xl border border-white/20 dark:border-slate-700 p-1.5 rounded-full flex items-center gap-1 shadow-[0_8px_30px_rgb(0,0,0,0.12)] dark:shadow-black/50 ring-1 ring-black/5">
             <button
@@ -992,6 +1037,7 @@ export default function HomePage() {
           </nav>
         </div>
 
+        {/* --- AI MODAL --- */}
         {isAiModalOpen && (
           <div
             className="absolute inset-0 z-100 flex items-center justify-center px-4 bg-black/60 backdrop-blur-sm"
@@ -1056,6 +1102,7 @@ export default function HomePage() {
           </div>
         )}
 
+        {/* --- SEARCH MODAL --- */}
         {isSearchOpen && (
           <div
             className="absolute inset-0 z-80 flex items-center justify-center px-4 bg-black/60 backdrop-blur-sm"
@@ -1092,6 +1139,7 @@ export default function HomePage() {
           </div>
         )}
 
+        {/* --- BUDGET MODAL --- */}
         {isBudgetModalOpen && (
           <div
             className="absolute inset-0 z-80 flex items-center justify-center px-4 bg-black/60 backdrop-blur-sm"
@@ -1135,6 +1183,7 @@ export default function HomePage() {
           </div>
         )}
 
+        {/* --- TOAST --- */}
         {toast.show && (
           <div
             className={`fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-90 transition-all duration-300 ${
@@ -1160,6 +1209,7 @@ export default function HomePage() {
           </div>
         )}
 
+        {/* --- DETAIL MODAL --- */}
         {detailModal && (
           <div className="fixed inset-0 z-70 flex items-center justify-center px-4 animate-in fade-in duration-200">
             <div
@@ -1229,6 +1279,7 @@ export default function HomePage() {
           </div>
         )}
 
+        {/* --- DELETE MODAL --- */}
         {deleteModal.show && (
           <div className="absolute inset-0 z-80 flex items-center justify-center px-4">
             <div
@@ -1262,6 +1313,7 @@ export default function HomePage() {
           </div>
         )}
 
+        {/* --- DRAWER FORM --- */}
         {isDrawerOpen && (
           <div className="absolute inset-0 z-60 flex items-center justify-center px-4">
             <div
@@ -1273,6 +1325,8 @@ export default function HomePage() {
                 <h3 className="text-lg font-bold text-gray-800 dark:text-slate-100">
                   {editingId ? "Edit Transaksi" : "Transaksi Baru"}
                 </h3>
+
+                {/* --- TOMBOL KAMERA DI SINI --- */}
                 <div className="flex items-center gap-2">
                   {!editingId && (
                     <label className="bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 p-2 rounded-full cursor-pointer hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors">
@@ -1358,15 +1412,18 @@ export default function HomePage() {
                   />
                 </div>
 
+                {/* GANTI SATU BLOK GRID INI */}
                 <div className="grid grid-cols-2 gap-3">
+                  {/* KOLOM 1: TANGGAL (FIXED) */}
                   <div className="relative">
-                    <Calendar
-                      size={14}
-                      className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                    />
+                    {/* Ikon Calendar: Dibuat pointer-events-none agar klik tembus ke input di bawahnya */}
+                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none z-10">
+                      <Calendar size={14} />
+                    </div>
+
                     <input
                       type="date"
-                      className="w-full bg-gray-50 dark:bg-slate-700/50 p-3 pl-9 rounded-xl font-medium text-sm text-gray-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900"
+                      className="w-full bg-gray-50 dark:bg-slate-700/50 p-3 pl-9 rounded-xl font-medium text-sm text-gray-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900 appearance-none [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
                       value={formData.date}
                       onChange={(e) =>
                         setFormData({ ...formData, date: e.target.value })
@@ -1374,11 +1431,12 @@ export default function HomePage() {
                       required
                     />
                   </div>
+
+                  {/* KOLOM 2: KATEGORI (AMAN, TIDAK DIHAPUS) */}
                   <div className="relative">
-                    <Tag
-                      size={14}
-                      className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                    />
+                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+                      <Tag size={14} />
+                    </div>
                     <select
                       value={formData.category}
                       onChange={(e) =>
@@ -1404,7 +1462,7 @@ export default function HomePage() {
                     </select>
                   </div>
                 </div>
-
+ 
                 <button
                   type="submit"
                   disabled={isSubmitting}

@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   // Ganti dengan URL Vercel kamu yang sebenarnya
   metadataBase: new URL("https://wallet-bice-beta.vercel.app"),
   title: {
-    default: "Simple Personal Finance Tracker",
+    default: "Myllet",
     template: "%s | Myllet",
   },
   description:
