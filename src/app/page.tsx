@@ -122,6 +122,30 @@ const getCategoryIcon = (category: string, type: "income" | "expense") => {
   }
 };
 
+const getCategoryColor = (category: string, type: "income" | "expense") => {
+  if (type === "income") {
+    return "bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400";
+  }
+  switch (category) {
+    case "Makanan & Minuman":
+      return "bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400";
+    case "Transportasi":
+      return "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400";
+    case "Belanja":
+      return "bg-pink-100 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400";
+    case "Tagihan & Utilitas":
+      return "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400";
+    case "Hiburan":
+      return "bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400";
+    case "Kesehatan":
+      return "bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400";
+    case "Investasi":
+      return "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400";
+    default:
+      return "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400";
+  }
+};
+
 const getGroupHeaderDate = (dateString: string) => {
   const date = new Date(dateString);
   const today = new Date();
@@ -178,6 +202,12 @@ export default function HomePage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [filterType, setFilterType] = useState<"all" | "income" | "expense">(
+    "all",
+  );
+  const [slideDirection, setSlideDirection] = useState<"left" | "right">(
+    "right",
+  );
 
   const [deleteModal, setDeleteModal] = useState<{
     show: boolean;
@@ -197,6 +227,12 @@ export default function HomePage() {
     date: "",
     type: "expense" as "income" | "expense",
   });
+
+  // Helper untuk Haptic Feedback (Getaran)
+  const vibrate = () => {
+    if (typeof navigator !== "undefined" && navigator.vibrate)
+      navigator.vibrate(10);
+  };
 
   const scrollToTop = () => {
     mainRef.current?.scrollTo({ top: 0, behavior: "smooth" });
@@ -419,24 +455,28 @@ export default function HomePage() {
   if (budgetPercentage > 50) progressColor = "bg-yellow-500";
   if (budgetPercentage > 85) progressColor = "bg-red-500";
 
-  const processedTransactions = [...transactions].sort((a, b) => {
-    switch (sortBy) {
-      case "date-desc":
-        return (
-          new Date(b.date).getTime() - new Date(a.date).getTime() || b.id - a.id
-        );
-      case "date-asc":
-        return (
-          new Date(a.date).getTime() - new Date(b.date).getTime() || a.id - b.id
-        );
-      case "amount-high":
-        return b.amount - a.amount;
-      case "amount-low":
-        return a.amount - b.amount;
-      default:
-        return 0;
-    }
-  });
+  const processedTransactions = [...transactions]
+    .filter((t) => filterType === "all" || t.type === filterType)
+    .sort((a, b) => {
+      switch (sortBy) {
+        case "date-desc":
+          return (
+            new Date(b.date).getTime() - new Date(a.date).getTime() ||
+            b.id - a.id
+          );
+        case "date-asc":
+          return (
+            new Date(a.date).getTime() - new Date(b.date).getTime() ||
+            a.id - b.id
+          );
+        case "amount-high":
+          return b.amount - a.amount;
+        case "amount-low":
+          return a.amount - b.amount;
+        default:
+          return 0;
+      }
+    });
 
   const groupedTransactionsList = useMemo(() => {
     const groups: { date: string; items: Transaction[] }[] = [];
@@ -486,12 +526,16 @@ export default function HomePage() {
   };
 
   const handlePrevMonth = () => {
+    vibrate();
+    setSlideDirection("left");
     const date = selectedMonth ? new Date(selectedMonth + "-01") : new Date();
     date.setMonth(date.getMonth() - 1);
     setSelectedMonth(date.toISOString().slice(0, 7));
   };
 
   const handleNextMonth = () => {
+    vibrate();
+    setSlideDirection("right");
     const date = selectedMonth ? new Date(selectedMonth + "-01") : new Date();
     date.setMonth(date.getMonth() + 1);
     setSelectedMonth(date.toISOString().slice(0, 7));
@@ -727,33 +771,63 @@ export default function HomePage() {
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              <div className="bg-white/10 backdrop-blur-md border border-white/20 p-3 rounded-xl flex flex-col justify-center relative overflow-hidden group hover:bg-white/15 transition-colors">
-                <div className="flex items-center gap-2 mb-1">
-                  <div className="bg-green-400/20 p-1.5 rounded-full text-green-300 shrink-0">
-                    <CircleArrowUp size={14} />
+              <button
+                onClick={() => {
+                  vibrate();
+                  setFilterType(filterType === "income" ? "all" : "income");
+                }}
+                className={`backdrop-blur-md border p-3 rounded-xl flex flex-col justify-center relative overflow-hidden transition-all active:scale-95 text-left ${filterType === "income" ? "bg-white/25 border-white/40 shadow-lg ring-2 ring-white/20" : filterType === "expense" ? "bg-white/5 border-white/10 opacity-60" : "bg-white/10 border-white/20 hover:bg-white/15"}`}
+              >
+                <div className="flex items-center justify-between mb-1 w-full">
+                  <div className="flex items-center gap-2">
+                    <div className="bg-green-400/20 p-1.5 rounded-full text-green-300 shrink-0">
+                      <CircleArrowUp size={14} />
+                    </div>
+                    <p className="text-[10px] text-indigo-100 font-medium uppercase tracking-wide">
+                      Pemasukan
+                    </p>
                   </div>
-                  <p className="text-[10px] text-indigo-100 font-medium uppercase tracking-wide">
-                    Pemasukan
-                  </p>
+                  {filterType === "income" && (
+                    <div className="w-2 h-2 bg-green-400 rounded-full shadow-[0_0_8px_rgba(74,222,128,0.8)]"></div>
+                  )}
                 </div>
-                <p className="font-bold text-base text-white truncate tracking-wide">
-                  {isLoading ? "..." : formatCurrency(summary.income)}
-                </p>
-              </div>
+                <div className="font-bold text-base text-white truncate tracking-wide">
+                  {isLoading ? (
+                    <div className="h-6 w-20 bg-white/20 rounded animate-pulse mt-0.5"></div>
+                  ) : (
+                    formatCurrency(summary.income)
+                  )}
+                </div>
+              </button>
 
-              <div className="bg-white/10 backdrop-blur-md border border-white/20 p-3 rounded-xl flex flex-col justify-center relative overflow-hidden group hover:bg-white/15 transition-colors">
-                <div className="flex items-center gap-2 mb-1">
-                  <div className="bg-red-400/20 p-1.5 rounded-full text-red-300 shrink-0">
-                    <CircleArrowDown size={14} />
+              <button
+                onClick={() => {
+                  vibrate();
+                  setFilterType(filterType === "expense" ? "all" : "expense");
+                }}
+                className={`backdrop-blur-md border p-3 rounded-xl flex flex-col justify-center relative overflow-hidden transition-all active:scale-95 text-left ${filterType === "expense" ? "bg-white/25 border-white/40 shadow-lg ring-2 ring-white/20" : filterType === "income" ? "bg-white/5 border-white/10 opacity-60" : "bg-white/10 border-white/20 hover:bg-white/15"}`}
+              >
+                <div className="flex items-center justify-between mb-1 w-full">
+                  <div className="flex items-center gap-2">
+                    <div className="bg-red-400/20 p-1.5 rounded-full text-red-300 shrink-0">
+                      <CircleArrowDown size={14} />
+                    </div>
+                    <p className="text-[10px] text-indigo-100 font-medium uppercase tracking-wide">
+                      Pengeluaran
+                    </p>
                   </div>
-                  <p className="text-[10px] text-indigo-100 font-medium uppercase tracking-wide">
-                    Pengeluaran
-                  </p>
+                  {filterType === "expense" && (
+                    <div className="w-2 h-2 bg-red-400 rounded-full shadow-[0_0_8px_rgba(248,113,113,0.8)]"></div>
+                  )}
                 </div>
-                <p className="font-bold text-base text-white truncate tracking-wide">
-                  {isLoading ? "..." : formatCurrency(summary.expense)}
-                </p>
-              </div>
+                <div className="font-bold text-base text-white truncate tracking-wide">
+                  {isLoading ? (
+                    <div className="h-6 w-20 bg-white/20 rounded animate-pulse mt-0.5"></div>
+                  ) : (
+                    formatCurrency(summary.expense)
+                  )}
+                </div>
+              </button>
             </div>
           </div>
         </header>
@@ -798,7 +872,14 @@ export default function HomePage() {
               </button>
 
               <div className="relative flex-1 text-center px-1 overflow-hidden group">
-                <span className="text-xs font-bold text-gray-700 dark:text-slate-200 truncate block">
+                <span
+                  key={selectedMonth}
+                  className={`text-xs font-bold text-gray-700 dark:text-slate-200 truncate block animate-in fade-in duration-300 ${
+                    slideDirection === "right"
+                      ? "slide-in-from-right-10"
+                      : "slide-in-from-left-10"
+                  }`}
+                >
                   {selectedMonth
                     ? new Date(selectedMonth + "-01").toLocaleDateString(
                         "id-ID",
@@ -890,12 +971,18 @@ export default function HomePage() {
                 Mulai tambahkan pengeluaran atau pemasukan Anda untuk melihatnya
                 di sini.
               </p>
+              <button
+                onClick={() => setIsDrawerOpen(true)}
+                className="mt-4 px-6 py-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full text-sm font-bold hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
+              >
+                Buat Transaksi Baru
+              </button>
             </div>
           ) : (
             <div className="space-y-6 pb-4">
               {groupedTransactionsList.map((group) => (
                 <div key={group.date}>
-                  <h3 className="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-3 px-2">
+                  <h3 className="sticky top-0 z-30 bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-sm py-2 text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-2 px-2 border-b border-gray-100 dark:border-slate-800/50 transition-all">
                     {getGroupHeaderDate(group.date)}
                   </h3>
                   <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden">
@@ -907,11 +994,7 @@ export default function HomePage() {
                         >
                           <div className="flex items-center gap-4 flex-1 min-w-0 pr-2">
                             <div
-                              className={`w-10 h-10 flex items-center justify-center rounded-full shrink-0 ${
-                                item.type === "income"
-                                  ? "bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400"
-                                  : "bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400"
-                              }`}
+                              className={`w-10 h-10 flex items-center justify-center rounded-full shrink-0 ${getCategoryColor(item.category, item.type)}`}
                             >
                               {getCategoryIcon(item.category, item.type)}
                             </div>
@@ -1462,7 +1545,7 @@ export default function HomePage() {
                     </select>
                   </div>
                 </div>
- 
+
                 <button
                   type="submit"
                   disabled={isSubmitting}

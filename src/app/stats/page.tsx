@@ -12,6 +12,17 @@ import {
   Calendar,
   Download,
   ArrowRight,
+  Banknote,
+  Gift,
+  TrendingUp,
+  CircleArrowUp,
+  Utensils,
+  Car,
+  ShoppingBag,
+  Zap,
+  Film,
+  HeartPulse,
+  MoreHorizontal,
 } from "lucide-react";
 import {
   PieChart,
@@ -50,6 +61,76 @@ const CATEGORY_COLORS = [
   "#f97316", // Orange
   "#64748b", // Slate (Others)
 ];
+
+const getCategoryIcon = (category: string, type: "income" | "expense") => {
+  if (type === "income") {
+    switch (category) {
+      case "Salary":
+      case "Gaji":
+        return <Banknote size={14} />;
+      case "Bonus":
+        return <Gift size={14} />;
+      case "Gift":
+      case "Hadiah":
+        return <Gift size={14} />;
+      case "Investment":
+      case "Investasi":
+        return <TrendingUp size={14} />;
+      default:
+        return <CircleArrowUp size={14} />;
+    }
+  } else {
+    switch (category) {
+      case "Food & Beverage":
+      case "Makanan & Minuman":
+        return <Utensils size={14} />;
+      case "Transportation":
+      case "Transportasi":
+        return <Car size={14} />;
+      case "Shopping":
+      case "Belanja":
+        return <ShoppingBag size={14} />;
+      case "Bills & Utilities":
+      case "Tagihan & Utilitas":
+        return <Zap size={14} />;
+      case "Entertainment":
+      case "Hiburan":
+        return <Film size={14} />;
+      case "Health":
+      case "Kesehatan":
+        return <HeartPulse size={14} />;
+      case "Invest":
+      case "Investasi":
+        return <TrendingUp size={14} />;
+      default:
+        return <MoreHorizontal size={14} />;
+    }
+  }
+};
+
+const getCategoryColor = (category: string, type: "income" | "expense") => {
+  if (type === "income") {
+    return "bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400";
+  }
+  switch (category) {
+    case "Makanan & Minuman":
+      return "bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400";
+    case "Transportasi":
+      return "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400";
+    case "Belanja":
+      return "bg-pink-100 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400";
+    case "Tagihan & Utilitas":
+      return "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400";
+    case "Hiburan":
+      return "bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400";
+    case "Kesehatan":
+      return "bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400";
+    case "Investasi":
+      return "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400";
+    default:
+      return "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400";
+  }
+};
 
 export default function StatsPage() {
   // --- AUTH STATE ---
@@ -99,19 +180,30 @@ export default function StatsPage() {
 
       setStartDate(formatToInput(start));
       setEndDate(formatToInput(end));
-
-      // C. Fetch Data (Otomatis terfilter by User ID via RLS Supabase)
-      await fetchData();
     };
 
     initPage();
   }, [router]);
 
+  // Fetch data setiap kali startDate / endDate berubah
+  useEffect(() => {
+    if (user && startDate && endDate) {
+      fetchData();
+    }
+  }, [user, startDate, endDate]);
+
   const fetchData = async () => {
+    setIsLoading(true);
     try {
-      const { data, error } = await supabase.from("transactions").select("*");
+      // Optimasi: Filter langsung di database, bukan fetch all
+      const { data, error } = await supabase
+        .from("transactions")
+        .select("*")
+        .gte("date", startDate)
+        .lte("date", endDate + "T23:59:59");
+
       if (error) throw error;
-      if (data) setTransactions(data);
+      if (data) setTransactions(data); // Data sudah terfilter dari DB
     } catch (error) {
       console.error(error);
     } finally {
@@ -119,13 +211,24 @@ export default function StatsPage() {
     }
   };
 
-  // --- LOGIC FILTER ---
-  const filteredTransactions = useMemo(() => {
-    return transactions.filter((t) => {
-      const tDate = t.date.split("T")[0];
-      return tDate >= startDate && tDate <= endDate;
-    });
-  }, [transactions, startDate, endDate]);
+  // Helper Quick Filter
+  const setQuickFilter = (days: number) => {
+    const end = new Date();
+    const start = new Date();
+    start.setDate(end.getDate() - days);
+
+    const format = (d: Date) => {
+      const offset = d.getTimezoneOffset();
+      const local = new Date(d.getTime() - offset * 60 * 1000);
+      return local.toISOString().split("T")[0];
+    };
+
+    setStartDate(format(start));
+    setEndDate(format(end));
+  };
+
+  // Karena data sudah difilter dari DB, kita pakai transactions langsung
+  const filteredTransactions = transactions;
 
   // --- LOGIC DAILY TREND (BAR CHART) ---
   const dailyTrendData = useMemo(() => {
@@ -316,6 +419,25 @@ export default function StatsPage() {
                   className="flex-1 min-w-0 bg-white/20 rounded-xl px-3 py-2.5 text-xs text-white font-bold focus:outline-none focus:ring-2 focus:ring-white/30 text-center [&::-webkit-calendar-picker-indicator]:invert transition-all hover:bg-white/30"
                 />
               </div>
+
+              {/* Quick Filters */}
+              <div className="flex gap-2 mt-3 overflow-x-auto pb-1 no-scrollbar">
+                <button onClick={() => setQuickFilter(7)} className="px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-lg text-[10px] font-bold text-white whitespace-nowrap transition-colors border border-white/10 active:scale-95">
+                  7 Hari
+                </button>
+                <button onClick={() => setQuickFilter(30)} className="px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-lg text-[10px] font-bold text-white whitespace-nowrap transition-colors border border-white/10 active:scale-95">
+                  30 Hari
+                </button>
+                <button onClick={() => setQuickFilter(90)} className="px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-lg text-[10px] font-bold text-white whitespace-nowrap transition-colors border border-white/10 active:scale-95">
+                  3 Bulan
+                </button>
+                <button onClick={() => setQuickFilter(180)} className="px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-lg text-[10px] font-bold text-white whitespace-nowrap transition-colors border border-white/10 active:scale-95">
+                  6 Bulan
+                </button>
+                <button onClick={() => setQuickFilter(365)} className="px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-lg text-[10px] font-bold text-white whitespace-nowrap transition-colors border border-white/10 active:scale-95">
+                  1 Tahun
+                </button>
+              </div>
             </div>
           </div>
         </header>
@@ -349,7 +471,7 @@ export default function StatsPage() {
                   {formatDateDisplay(startDate)} - {formatDateDisplay(endDate)}
                 </p>
                 <div className="h-56 w-full">
-                  <ResponsiveContainer width="100%" height="100%">
+                  <ResponsiveContainer width="100%" height="100%" minHeight={100} minWidth={0}>
                     <PieChart>
                       <Pie
                         data={summaryData}
@@ -392,7 +514,7 @@ export default function StatsPage() {
                     Tren Harian
                   </h3>
                   <div className="h-64 w-full">
-                    <ResponsiveContainer width="100%" height="100%">
+                    <ResponsiveContainer width="100%" height="100%" minHeight={100} minWidth={0}>
                       <BarChart
                         data={dailyTrendData}
                         margin={{ top: 5, right: 5, left: -20, bottom: 0 }}
@@ -470,7 +592,7 @@ export default function StatsPage() {
 
                   {/* GRAFIK */}
                   <div className="h-64 w-full mb-6">
-                    <ResponsiveContainer width="100%" height="100%">
+                    <ResponsiveContainer width="100%" height="100%" minHeight={100} minWidth={0}>
                       <PieChart>
                         <Pie
                           data={expenseChartData}
@@ -521,10 +643,9 @@ export default function StatsPage() {
                         <div key={idx} className="flex flex-col gap-1">
                           <div className="flex justify-between items-center text-xs">
                             <div className="flex items-center gap-2">
-                              <div
-                                className="w-2.5 h-2.5 rounded-full shrink-0"
-                                style={{ backgroundColor: barColor }}
-                              ></div>
+                              <div className={`w-6 h-6 flex items-center justify-center rounded-full shrink-0 ${getCategoryColor(item.name, "expense")}`}>
+                                {getCategoryIcon(item.name, "expense")}
+                              </div>
                               <span className="text-gray-700 dark:text-slate-300 font-medium truncate max-w-30">
                                 {item.name}
                               </span>
@@ -561,7 +682,7 @@ export default function StatsPage() {
                     Sumber Pemasukan
                   </h3>
                   <div className="h-56 w-full">
-                    <ResponsiveContainer width="100%" height="100%">
+                    <ResponsiveContainer width="100%" height="100%" minHeight={100} minWidth={0}>
                       <PieChart>
                         <Pie
                           data={incomeChartData}
