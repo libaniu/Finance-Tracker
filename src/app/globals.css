@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+/* @custom-variant dark (&:where(.dark, .dark *)); */
+
 body {
   background-color: #f1f5f9; /* Slate 100 - Background Desktop */
   color: #1e293b; /* Slate 900 - Text color */
@@ -8,7 +10,7 @@ body {
     color 0.2s ease;
 }
 
-:root.dark body {
+html.dark body {
   background-color: #0f172a; /* Slate 950 - Dark background */
   color: #e2e8f0; /* Slate 200 - Dark text */
 }
@@ -24,16 +26,16 @@ body {
 
 /* Opsional: Biar scrollbar di Chrome/Android tidak merusak pemandangan */
 ::-webkit-scrollbar {
-  width: 0px;
+  width: 8px;
   background: transparent;
 }
 
 /* Custom scrollbar untuk dark mode */
-:root.dark ::-webkit-scrollbar-track {
+html.dark ::-webkit-scrollbar-track {
   background: #1e293b;
 }
 
-:root.dark ::-webkit-scrollbar-thumb {
+html.dark ::-webkit-scrollbar-thumb {
   background: #475569;
 }
 

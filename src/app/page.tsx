@@ -27,7 +27,6 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
-  Filter,
   CircleArrowUp,
   CircleArrowDown,
   LogOut,
@@ -47,7 +46,6 @@ import {
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
-// --- TYPES ---
 interface Transaction {
   id: number;
   title: string;
@@ -274,6 +272,9 @@ export default function HomePage() {
     setIsDarkMode(newMode);
     document.documentElement.classList.toggle("dark", newMode);
     localStorage.setItem("theme", newMode ? "dark" : "light");
+    console.log(
+      `Tema: ${newMode ? "Dark" : "Light"} (Class 'dark' ${newMode ? "added" : "removed"})`,
+    );
   };
 
   useEffect(() => {
@@ -575,7 +576,7 @@ export default function HomePage() {
       const reader = new FileReader();
       reader.readAsDataURL(file);
       reader.onloadend = async () => {
-        const base64data = reader.result;
+        const base64data = reader.result as string;
 
         const response = await fetch("/api/scan", {
           method: "POST",
@@ -713,7 +714,7 @@ export default function HomePage() {
     <div className="bg-slate-50 dark:bg-slate-900 min-h-screen flex justify-center">
       <div className="fixed inset-0 w-full max-w-md bg-slate-50 dark:bg-slate-900 h-dvh flex flex-col overflow-hidden sm:shadow-2xl overscroll-none mx-auto">
         {/* HEADER */}
-        <header className="flex-none bg-linear-to-br from-blue-600 to-cyan-600 dark:from-blue-900 dark:to-cyan-950 px-6 pt-6 pb-6 rounded-b-4xl text-white relative z-10 shadow-xl overflow-hidden">
+        <header className="flex-none bg-linear-to-br from-blue-600 to-cyan-600 dark:from-blue-900 dark:to-cyan-900 px-6 pt-6 pb-6 rounded-b-[2.5rem] text-white relative z-10 shadow-xl overflow-hidden">
           <div className="absolute top-[-20%] right-[-10%] w-64 h-64 bg-white/10 rounded-full blur-3xl pointer-events-none"></div>
           <div className="absolute bottom-[-10%] left-[-10%] w-40 h-40 bg-blue-400/20 rounded-full blur-2xl pointer-events-none"></div>
 
@@ -1083,7 +1084,7 @@ export default function HomePage() {
         <div className="absolute bottom-24 left-6 z-50">
           <button
             onClick={() => setIsSearchOpen(true)}
-            className="bg-linear-to-r from-blue-600 to-cyan-600 text-white h-14 w-14 rounded-full shadow-lg shadow-blue-600/40 dark:shadow-blue-900/40 flex items-center justify-center transform transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-blue-600/50 active:scale-90"
+            className="bg-linear-to-r from-blue-600 to-cyan-600 dark:from-blue-700 dark:to-cyan-800 text-white h-14 w-14 rounded-full shadow-lg shadow-blue-600/40 dark:shadow-blue-900/40 flex items-center justify-center transform transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-blue-600/50 active:scale-90"
           >
             <Search size={28} />
           </button>
@@ -1095,7 +1096,7 @@ export default function HomePage() {
               resetForm();
               setIsDrawerOpen(true);
             }}
-            className="bg-linear-to-r from-blue-600 to-cyan-600 text-white h-14 w-14 rounded-full shadow-lg shadow-blue-600/40 dark:shadow-blue-900/40 flex items-center justify-center transform transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-blue-600/50 active:scale-90"
+            className="bg-linear-to-r from-blue-600 to-cyan-600 dark:from-blue-700 dark:to-cyan-800 text-white h-14 w-14 rounded-full shadow-lg shadow-blue-600/40 dark:shadow-blue-900/40 flex items-center justify-center transform transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-blue-600/50 active:scale-90"
           >
             <Plus size={32} />
           </button>
@@ -1559,7 +1560,7 @@ export default function HomePage() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full bg-linear-to-r from-blue-600 to-cyan-600 dark:bg-blue-700 text-white py-3.5 rounded-xl font-bold text-sm mt-2 shadow-lg shadow-blue-600/20 hover:bg-blue-700 active:scale-95 transition-all disabled:opacity-50"
+                  className="w-full bg-linear-to-r from-blue-600 to-cyan-600 dark:from-blue-700 dark:to-cyan-800 text-white py-3.5 rounded-xl font-bold text-sm mt-2 shadow-lg shadow-blue-600/20 hover:bg-blue-700 active:scale-95 transition-all disabled:opacity-50"
                 >
                   {isSubmitting
                     ? "Menyimpan..."

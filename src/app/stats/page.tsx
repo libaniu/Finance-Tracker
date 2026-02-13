@@ -379,7 +379,7 @@ export default function StatsPage() {
     <div className="bg-slate-50 dark:bg-slate-900 min-h-screen flex justify-center">
       <div className="fixed inset-0 w-full max-w-md bg-slate-50 dark:bg-slate-900 h-dvh flex flex-col overflow-hidden sm:shadow-2xl overscroll-none mx-auto">
         {/* HEADER */}
-        <header className="flex-none bg-linear-to-br from-blue-600 to-cyan-600 dark:from-blue-900 dark:to-cyan-950 px-6 pt-12 pb-10 rounded-b-[3rem] text-white relative z-10 shadow-xl overflow-hidden">
+        <header className="flex-none bg-linear-to-br from-blue-600 to-cyan-600 dark:from-blue-900 dark:to-cyan-900 px-6 pt-12 pb-10 rounded-b-[3rem] text-white relative z-10 shadow-xl overflow-hidden">
           {/* Decorative Background */}
           <div className="absolute top-[-20%] right-[-10%] w-72 h-72 bg-white/10 rounded-full blur-3xl pointer-events-none"></div>
           <div className="absolute bottom-[-10%] left-[-10%] w-48 h-48 bg-blue-400/20 rounded-full blur-2xl pointer-events-none"></div>
