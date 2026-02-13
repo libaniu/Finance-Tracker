@@ -788,7 +788,7 @@ export default function HomePage() {
           {/* --- FILTER & SORT (RASIO 55:45) --- */}
           <div className="flex flex-row gap-3 mb-6 w-full">
             {/* Bagian Tanggal - 55% Width */}
-            <div className="flex items-center justify-between bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl w-[55%] shadow-sm p-1 relative">
+            <div className="flex items-center justify-between bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl w-[58%] shadow-sm p-1 relative">
               <button
                 onClick={handlePrevMonth}
                 className="p-2 text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors shrink-0 z-20"
@@ -838,7 +838,7 @@ export default function HomePage() {
             </div>
 
             {/* Bagian Sort - 45% Width */}
-            <div className="relative w-[45%]">
+            <div className="relative w-[42%]">
               <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-slate-400 pointer-events-none">
                 <ArrowUpDown size={14} />
               </div>
