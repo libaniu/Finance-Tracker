@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* @custom-variant dark (&:where(.dark, .dark *)); */
+@custom-variant dark (&:where(.dark, .dark *));
 
 body {
   background-color: #f1f5f9; /* Slate 100 - Background Desktop */
