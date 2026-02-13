@@ -40,9 +40,6 @@ import {
   Banknote,
   Gift,
   Wallet,
-  Headphones,
-  ChevronLeft,
-  ChevronRight,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
@@ -122,30 +119,6 @@ const getCategoryIcon = (category: string, type: "income" | "expense") => {
   }
 };
 
-const getCategoryColor = (category: string, type: "income" | "expense") => {
-  if (type === "income") {
-    return "bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400";
-  }
-  switch (category) {
-    case "Makanan & Minuman":
-      return "bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400";
-    case "Transportasi":
-      return "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400";
-    case "Belanja":
-      return "bg-pink-100 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400";
-    case "Tagihan & Utilitas":
-      return "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400";
-    case "Hiburan":
-      return "bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400";
-    case "Kesehatan":
-      return "bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400";
-    case "Investasi":
-      return "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400";
-    default:
-      return "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400";
-  }
-};
-
 const getGroupHeaderDate = (dateString: string) => {
   const date = new Date(dateString);
   const today = new Date();
@@ -186,6 +159,7 @@ export default function HomePage() {
   );
 
   const observerTarget = useRef<HTMLDivElement>(null);
+  const monthInputRef = useRef<HTMLInputElement>(null);
 
   const [monthlyBudget, setMonthlyBudget] = useState(0);
   const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false);
@@ -202,12 +176,6 @@ export default function HomePage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [filterType, setFilterType] = useState<"all" | "income" | "expense">(
-    "all",
-  );
-  const [slideDirection, setSlideDirection] = useState<"left" | "right">(
-    "right",
-  );
 
   const [deleteModal, setDeleteModal] = useState<{
     show: boolean;
@@ -227,12 +195,6 @@ export default function HomePage() {
     date: "",
     type: "expense" as "income" | "expense",
   });
-
-  // Helper untuk Haptic Feedback (Getaran)
-  const vibrate = () => {
-    if (typeof navigator !== "undefined" && navigator.vibrate)
-      navigator.vibrate(10);
-  };
 
   const scrollToTop = () => {
     mainRef.current?.scrollTo({ top: 0, behavior: "smooth" });
@@ -455,28 +417,24 @@ export default function HomePage() {
   if (budgetPercentage > 50) progressColor = "bg-yellow-500";
   if (budgetPercentage > 85) progressColor = "bg-red-500";
 
-  const processedTransactions = [...transactions]
-    .filter((t) => filterType === "all" || t.type === filterType)
-    .sort((a, b) => {
-      switch (sortBy) {
-        case "date-desc":
-          return (
-            new Date(b.date).getTime() - new Date(a.date).getTime() ||
-            b.id - a.id
-          );
-        case "date-asc":
-          return (
-            new Date(a.date).getTime() - new Date(b.date).getTime() ||
-            a.id - b.id
-          );
-        case "amount-high":
-          return b.amount - a.amount;
-        case "amount-low":
-          return a.amount - b.amount;
-        default:
-          return 0;
-      }
-    });
+  const processedTransactions = [...transactions].sort((a, b) => {
+    switch (sortBy) {
+      case "date-desc":
+        return (
+          new Date(b.date).getTime() - new Date(a.date).getTime() || b.id - a.id
+        );
+      case "date-asc":
+        return (
+          new Date(a.date).getTime() - new Date(b.date).getTime() || a.id - b.id
+        );
+      case "amount-high":
+        return b.amount - a.amount;
+      case "amount-low":
+        return a.amount - b.amount;
+      default:
+        return 0;
+    }
+  });
 
   const groupedTransactionsList = useMemo(() => {
     const groups: { date: string; items: Transaction[] }[] = [];
@@ -523,22 +481,6 @@ export default function HomePage() {
     });
     setEditingId(null);
     setIsDrawerOpen(false);
-  };
-
-  const handlePrevMonth = () => {
-    vibrate();
-    setSlideDirection("left");
-    const date = selectedMonth ? new Date(selectedMonth + "-01") : new Date();
-    date.setMonth(date.getMonth() - 1);
-    setSelectedMonth(date.toISOString().slice(0, 7));
-  };
-
-  const handleNextMonth = () => {
-    vibrate();
-    setSlideDirection("right");
-    const date = selectedMonth ? new Date(selectedMonth + "-01") : new Date();
-    date.setMonth(date.getMonth() + 1);
-    setSelectedMonth(date.toISOString().slice(0, 7));
   };
 
   const handleScanReceipt = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -709,28 +651,18 @@ export default function HomePage() {
                   {user?.user_metadata?.display_name || "User"}
                 </h2>
               </div>
-              <div className="flex items-center gap-2">
-                <Link
-                  href="https://www.instagram.com/dn_hay"
-                  target="_blank"
-                  className="bg-white/10 p-2 rounded-full backdrop-blur-sm hover:bg-white/20 transition text-blue-100 active:scale-95"
-                  title="Help Desk"
-                >
-                  <Headphones size={16} />
-                </Link>
-                <button
-                  onClick={handleLogout}
-                  className="bg-white/10 p-2 rounded-full backdrop-blur-sm hover:bg-white/20 transition text-blue-100 active:scale-95"
-                  title="Logout"
-                >
-                  <LogOut size={16} />
-                </button>
-              </div>
+              <button
+                onClick={handleLogout}
+                className="bg-white/10 p-2 rounded-full backdrop-blur-sm hover:bg-white/20 transition text-blue-100 active:scale-95"
+                title="Logout"
+              >
+                <LogOut size={16} />
+              </button>
             </div>
 
             <div className="flex justify-between items-center mb-5">
               <div>
-                <p className="text-indigo-100 text-base font-semibold mb-0.5 opacity-90">
+                <p className="text-indigo-100 text-xs font-semibold mb-0.5 opacity-90">
                   Total Saldo
                 </p>
                 <h1 className="text-3xl font-extrabold tracking-tight">
@@ -771,25 +703,14 @@ export default function HomePage() {
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              <button
-                onClick={() => {
-                  vibrate();
-                  setFilterType(filterType === "income" ? "all" : "income");
-                }}
-                className={`backdrop-blur-md border p-3 rounded-xl flex flex-col justify-center relative overflow-hidden transition-all active:scale-95 text-left ${filterType === "income" ? "bg-white/25 border-white/40 shadow-lg ring-2 ring-white/20" : filterType === "expense" ? "bg-white/5 border-white/10 opacity-60" : "bg-white/10 border-white/20 hover:bg-white/15"}`}
-              >
-                <div className="flex items-center justify-between mb-1 w-full">
-                  <div className="flex items-center gap-2">
-                    <div className="bg-green-400/20 p-1.5 rounded-full text-green-300 shrink-0">
-                      <CircleArrowUp size={14} />
-                    </div>
-                    <p className="text-[10px] text-indigo-100 font-medium uppercase tracking-wide">
-                      Pemasukan
-                    </p>
+              <div className="bg-white/10 backdrop-blur-md border border-white/20 p-3 rounded-xl flex flex-col justify-center relative overflow-hidden group hover:bg-white/15 transition-colors">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="bg-green-400/20 p-1.5 rounded-full text-green-300 shrink-0">
+                    <CircleArrowUp size={14} />
                   </div>
-                  {filterType === "income" && (
-                    <div className="w-2 h-2 bg-green-400 rounded-full shadow-[0_0_8px_rgba(74,222,128,0.8)]"></div>
-                  )}
+                  <p className="text-[10px] text-indigo-100 font-medium uppercase tracking-wide">
+                    Pemasukan
+                  </p>
                 </div>
                 <div className="font-bold text-base text-white truncate tracking-wide">
                   {isLoading ? (
@@ -798,27 +719,16 @@ export default function HomePage() {
                     formatCurrency(summary.income)
                   )}
                 </div>
-              </button>
+              </div>
 
-              <button
-                onClick={() => {
-                  vibrate();
-                  setFilterType(filterType === "expense" ? "all" : "expense");
-                }}
-                className={`backdrop-blur-md border p-3 rounded-xl flex flex-col justify-center relative overflow-hidden transition-all active:scale-95 text-left ${filterType === "expense" ? "bg-white/25 border-white/40 shadow-lg ring-2 ring-white/20" : filterType === "income" ? "bg-white/5 border-white/10 opacity-60" : "bg-white/10 border-white/20 hover:bg-white/15"}`}
-              >
-                <div className="flex items-center justify-between mb-1 w-full">
-                  <div className="flex items-center gap-2">
-                    <div className="bg-red-400/20 p-1.5 rounded-full text-red-300 shrink-0">
-                      <CircleArrowDown size={14} />
-                    </div>
-                    <p className="text-[10px] text-indigo-100 font-medium uppercase tracking-wide">
-                      Pengeluaran
-                    </p>
+              <div className="bg-white/10 backdrop-blur-md border border-white/20 p-3 rounded-xl flex flex-col justify-center relative overflow-hidden group hover:bg-white/15 transition-colors">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="bg-red-400/20 p-1.5 rounded-full text-red-300 shrink-0">
+                    <CircleArrowDown size={14} />
                   </div>
-                  {filterType === "expense" && (
-                    <div className="w-2 h-2 bg-red-400 rounded-full shadow-[0_0_8px_rgba(248,113,113,0.8)]"></div>
-                  )}
+                  <p className="text-[10px] text-indigo-100 font-medium uppercase tracking-wide">
+                    Pengeluaran
+                  </p>
                 </div>
                 <div className="font-bold text-base text-white truncate tracking-wide">
                   {isLoading ? (
@@ -827,7 +737,7 @@ export default function HomePage() {
                     formatCurrency(summary.expense)
                   )}
                 </div>
-              </button>
+              </div>
             </div>
           </div>
         </header>
@@ -861,60 +771,31 @@ export default function HomePage() {
             </div>
           )}
 
-          {/* FILTER & SORT */}
+          {/* FILTER & SORT (60:40 RATIO) */}
           <div className="flex flex-row gap-3 mb-6 w-full">
-            <div className="flex items-center justify-between bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl w-[58%] shadow-sm p-1 relative">
+            <div className="relative w-[58%]">
               <button
-                onClick={handlePrevMonth}
-                className="p-2 text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors shrink-0"
+                onClick={() => monthInputRef.current?.showPicker()}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-slate-200"
               >
-                <ChevronLeft size={16} />
+                <Calendar size={14} />
               </button>
-
-              <div className="relative flex-1 text-center px-1 overflow-hidden group">
-                <span
-                  key={selectedMonth}
-                  className={`text-xs font-bold text-gray-700 dark:text-slate-200 truncate block animate-in fade-in duration-300 ${
-                    slideDirection === "right"
-                      ? "slide-in-from-right-10"
-                      : "slide-in-from-left-10"
-                  }`}
-                >
-                  {selectedMonth
-                    ? new Date(selectedMonth + "-01").toLocaleDateString(
-                        "id-ID",
-                        {
-                          month: "long",
-                          year: "numeric",
-                        },
-                      )
-                    : "Semua Waktu"}
-                </span>
-                <input
-                  type="month"
-                  value={selectedMonth}
-                  onChange={(e) => setSelectedMonth(e.target.value)}
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                />
-              </div>
-
-              <div className="flex items-center shrink-0 relative">
-                {selectedMonth && (
-                  <button
-                    onClick={() => setSelectedMonth("")}
-                    className="p-1 text-gray-300 hover:text-red-500 transition-colors mr-1"
-                    title="Hapus Filter"
-                  >
-                    <X size={14} />
-                  </button>
-                )}
+              <input
+                ref={monthInputRef}
+                type="month"
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(e.target.value)}
+                className="w-full bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-300 text-xs font-semibold pl-8 pr-2 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900 shadow-sm appearance-none min-w-0 [&::-webkit-calendar-picker-indicator]:opacity-100 [&::-webkit-calendar-picker-indicator]:brightness-0 dark:[&::-webkit-calendar-picker-indicator]:invert"
+              />
+              {selectedMonth && (
                 <button
-                  onClick={handleNextMonth}
-                  className="p-2 text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                  onClick={() => setSelectedMonth("")}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-200 p-1.5 rounded-full hover:bg-red-100 dark:hover:bg-red-900 hover:text-red-600 transition-colors"
+                  title="Tampilkan Semua (Hapus Filter)"
                 >
-                  <ChevronRight size={16} />
+                  <X size={11} />
                 </button>
-              </div>
+              )}
             </div>
 
             <div className="relative w-[42%]">
@@ -971,18 +852,12 @@ export default function HomePage() {
                 Mulai tambahkan pengeluaran atau pemasukan Anda untuk melihatnya
                 di sini.
               </p>
-              <button
-                onClick={() => setIsDrawerOpen(true)}
-                className="mt-4 px-6 py-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full text-sm font-bold hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
-              >
-                Buat Transaksi Baru
-              </button>
             </div>
           ) : (
             <div className="space-y-6 pb-4">
               {groupedTransactionsList.map((group) => (
                 <div key={group.date}>
-                  <h3 className="sticky top-0 z-30 bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-sm py-2 text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-2 px-2 border-b border-gray-100 dark:border-slate-800/50 transition-all">
+                  <h3 className="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-3 px-2">
                     {getGroupHeaderDate(group.date)}
                   </h3>
                   <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden">
@@ -994,7 +869,11 @@ export default function HomePage() {
                         >
                           <div className="flex items-center gap-4 flex-1 min-w-0 pr-2">
                             <div
-                              className={`w-10 h-10 flex items-center justify-center rounded-full shrink-0 ${getCategoryColor(item.category, item.type)}`}
+                              className={`w-10 h-10 flex items-center justify-center rounded-full shrink-0 ${
+                                item.type === "income"
+                                  ? "bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400"
+                                  : "bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400"
+                              }`}
                             >
                               {getCategoryIcon(item.category, item.type)}
                             </div>
@@ -1396,7 +1275,7 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* --- DRAWER FORM --- */}
+        {/* --- DRAWER FORM (DENGAN TOMBOL KAMERA) --- */}
         {isDrawerOpen && (
           <div className="absolute inset-0 z-60 flex items-center justify-center px-4">
             <div
@@ -1409,10 +1288,10 @@ export default function HomePage() {
                   {editingId ? "Edit Transaksi" : "Transaksi Baru"}
                 </h3>
 
-                {/* --- TOMBOL KAMERA DI SINI --- */}
+                {/* TOMBOL KAMERA */}
                 <div className="flex items-center gap-2">
                   {!editingId && (
-                    <label className="bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 p-2 rounded-full cursor-pointer hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors">
+                    <label className="bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 p-2 rounded-full cursor-pointer hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors relative group">
                       {isScanning ? (
                         <Loader2 className="animate-spin" size={18} />
                       ) : (
@@ -1495,15 +1374,12 @@ export default function HomePage() {
                   />
                 </div>
 
-                {/* GANTI SATU BLOK GRID INI */}
                 <div className="grid grid-cols-2 gap-3">
-                  {/* KOLOM 1: TANGGAL (FIXED) */}
+                  {/* DATE PICKER (FIXED) */}
                   <div className="relative">
-                    {/* Ikon Calendar: Dibuat pointer-events-none agar klik tembus ke input di bawahnya */}
                     <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none z-10">
                       <Calendar size={14} />
                     </div>
-
                     <input
                       type="date"
                       className="w-full bg-gray-50 dark:bg-slate-700/50 p-3 pl-9 rounded-xl font-medium text-sm text-gray-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900 appearance-none [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
@@ -1515,7 +1391,6 @@ export default function HomePage() {
                     />
                   </div>
 
-                  {/* KOLOM 2: KATEGORI (AMAN, TIDAK DIHAPUS) */}
                   <div className="relative">
                     <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
                       <Tag size={14} />

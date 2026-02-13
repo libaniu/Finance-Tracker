@@ -421,20 +421,29 @@ export default function StatsPage() {
               </div>
 
               {/* Quick Filters */}
-              <div className="flex gap-2 mt-3 overflow-x-auto pb-1 no-scrollbar">
-                <button onClick={() => setQuickFilter(7)} className="px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-lg text-[10px] font-bold text-white whitespace-nowrap transition-colors border border-white/10 active:scale-95">
-                  7 Hari
-                </button>
-                <button onClick={() => setQuickFilter(30)} className="px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-lg text-[10px] font-bold text-white whitespace-nowrap transition-colors border border-white/10 active:scale-95">
+              <div className="grid grid-cols-4 gap-2 mt-3">
+                <button
+                  onClick={() => setQuickFilter(30)}
+                  className="py-1.5 bg-white/10 hover:bg-white/20 rounded-lg text-[10px] font-bold text-white transition-colors border border-white/10 active:scale-95"
+                >
                   30 Hari
                 </button>
-                <button onClick={() => setQuickFilter(90)} className="px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-lg text-[10px] font-bold text-white whitespace-nowrap transition-colors border border-white/10 active:scale-95">
+                <button
+                  onClick={() => setQuickFilter(90)}
+                  className="py-1.5 bg-white/10 hover:bg-white/20 rounded-lg text-[10px] font-bold text-white transition-colors border border-white/10 active:scale-95"
+                >
                   3 Bulan
                 </button>
-                <button onClick={() => setQuickFilter(180)} className="px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-lg text-[10px] font-bold text-white whitespace-nowrap transition-colors border border-white/10 active:scale-95">
+                <button
+                  onClick={() => setQuickFilter(180)}
+                  className="py-1.5 bg-white/10 hover:bg-white/20 rounded-lg text-[10px] font-bold text-white transition-colors border border-white/10 active:scale-95"
+                >
                   6 Bulan
                 </button>
-                <button onClick={() => setQuickFilter(365)} className="px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-lg text-[10px] font-bold text-white whitespace-nowrap transition-colors border border-white/10 active:scale-95">
+                <button
+                  onClick={() => setQuickFilter(365)}
+                  className="py-1.5 bg-white/10 hover:bg-white/20 rounded-lg text-[10px] font-bold text-white transition-colors border border-white/10 active:scale-95"
+                >
                   1 Tahun
                 </button>
               </div>
@@ -471,7 +480,12 @@ export default function StatsPage() {
                   {formatDateDisplay(startDate)} - {formatDateDisplay(endDate)}
                 </p>
                 <div className="h-56 w-full">
-                  <ResponsiveContainer width="100%" height="100%" minHeight={100} minWidth={0}>
+                  <ResponsiveContainer
+                    width="100%"
+                    height="100%"
+                    minHeight={100}
+                    minWidth={0}
+                  >
                     <PieChart>
                       <Pie
                         data={summaryData}
@@ -514,7 +528,12 @@ export default function StatsPage() {
                     Tren Harian
                   </h3>
                   <div className="h-64 w-full">
-                    <ResponsiveContainer width="100%" height="100%" minHeight={100} minWidth={0}>
+                    <ResponsiveContainer
+                      width="100%"
+                      height="100%"
+                      minHeight={100}
+                      minWidth={0}
+                    >
                       <BarChart
                         data={dailyTrendData}
                         margin={{ top: 5, right: 5, left: -20, bottom: 0 }}
@@ -592,7 +611,12 @@ export default function StatsPage() {
 
                   {/* GRAFIK */}
                   <div className="h-64 w-full mb-6">
-                    <ResponsiveContainer width="100%" height="100%" minHeight={100} minWidth={0}>
+                    <ResponsiveContainer
+                      width="100%"
+                      height="100%"
+                      minHeight={100}
+                      minWidth={0}
+                    >
                       <PieChart>
                         <Pie
                           data={expenseChartData}
@@ -643,7 +667,9 @@ export default function StatsPage() {
                         <div key={idx} className="flex flex-col gap-1">
                           <div className="flex justify-between items-center text-xs">
                             <div className="flex items-center gap-2">
-                              <div className={`w-6 h-6 flex items-center justify-center rounded-full shrink-0 ${getCategoryColor(item.name, "expense")}`}>
+                              <div
+                                className={`w-6 h-6 flex items-center justify-center rounded-full shrink-0 ${getCategoryColor(item.name, "expense")}`}
+                              >
                                 {getCategoryIcon(item.name, "expense")}
                               </div>
                               <span className="text-gray-700 dark:text-slate-300 font-medium truncate max-w-30">
@@ -682,7 +708,12 @@ export default function StatsPage() {
                     Sumber Pemasukan
                   </h3>
                   <div className="h-56 w-full">
-                    <ResponsiveContainer width="100%" height="100%" minHeight={100} minWidth={0}>
+                    <ResponsiveContainer
+                      width="100%"
+                      height="100%"
+                      minHeight={100}
+                      minWidth={0}
+                    >
                       <PieChart>
                         <Pie
                           data={incomeChartData}
