@@ -42,6 +42,8 @@ import {
   Banknote,
   Gift,
   Wallet,
+  Moon,
+  Sun,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
@@ -163,6 +165,12 @@ export default function HomePage() {
   const observerTarget = useRef<HTMLDivElement>(null);
   const monthInputRef = useRef<HTMLInputElement>(null);
 
+  // --- PULL TO REFRESH STATE ---
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [pullY, setPullY] = useState(0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const pullStartY = useRef(0);
+
   const [monthlyBudget, setMonthlyBudget] = useState(0);
   const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -212,6 +220,60 @@ export default function HomePage() {
 
   const scrollToTop = () => {
     mainRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  // --- PULL TO REFRESH HANDLERS ---
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (mainRef.current?.scrollTop === 0) {
+      pullStartY.current = e.targetTouches[0].clientY;
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    const scrollTop = mainRef.current?.scrollTop ?? 0;
+    if (scrollTop === 0 && pullStartY.current > 0) {
+      const touchY = e.targetTouches[0].clientY;
+      const diff = touchY - pullStartY.current;
+      if (diff > 0) {
+        setPullY(Math.min(diff * 0.4, 80)); // Resistance & Max limit
+      }
+    }
+  };
+
+  const handleTouchEnd = async () => {
+    if (pullY > 40) {
+      setIsRefreshing(true);
+      setPullY(50); // Snap to loading height
+      await Promise.all([fetchSummary(), fetchTransactions(0, true)]);
+      setTimeout(() => setIsRefreshing(false), 500);
+      setTimeout(() => setPullY(0), 500);
+    } else {
+      setPullY(0);
+    }
+    pullStartY.current = 0;
+  };
+
+  // --- THEME HANDLER ---
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("theme");
+    const systemPrefersDark = window.matchMedia(
+      "(prefers-color-scheme: dark)",
+    ).matches;
+
+    if (savedTheme === "dark" || (!savedTheme && systemPrefersDark)) {
+      setIsDarkMode(true);
+      document.documentElement.classList.add("dark");
+    } else {
+      setIsDarkMode(false);
+      document.documentElement.classList.remove("dark");
+    }
+  }, []);
+
+  const toggleTheme = () => {
+    const newMode = !isDarkMode;
+    setIsDarkMode(newMode);
+    document.documentElement.classList.toggle("dark", newMode);
+    localStorage.setItem("theme", newMode ? "dark" : "light");
   };
 
   useEffect(() => {
@@ -713,6 +775,13 @@ export default function HomePage() {
                 >
                   <Settings size={18} />
                 </button>
+
+                <button
+                  onClick={toggleTheme}
+                  className="bg-white/15 p-2 rounded-xl backdrop-blur-md hover:bg-white/25 transition active:scale-95 border border-white/10 shadow-sm"
+                >
+                  {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
+                </button>
               </div>
             </div>
 
@@ -759,9 +828,30 @@ export default function HomePage() {
         {/* MAIN CONTENT */}
         <main
           ref={mainRef}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
           onScroll={(e) => setIsScrolled(e.currentTarget.scrollTop > 20)}
-          className="flex-1 px-6 pt-6 pb-32 overflow-y-auto overscroll-y-auto scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']"
+          className="flex-1 px-6 pt-6 pb-32 overflow-y-auto overscroll-y-contain scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']"
         >
+          {/* PULL TO REFRESH INDICATOR */}
+          <div
+            className="flex items-center justify-center overflow-hidden transition-all duration-200 ease-out"
+            style={{ height: pullY, opacity: pullY > 0 ? 1 : 0 }}
+          >
+            <div
+              className={`transform transition-transform duration-300 ${
+                pullY > 40 && !isRefreshing ? "rotate-180" : ""
+              }`}
+            >
+              {isRefreshing ? (
+                <Loader2 className="animate-spin text-blue-600" size={20} />
+              ) : (
+                <ChevronDown className="text-gray-400" size={20} />
+              )}
+            </div>
+          </div>
+
           {monthlyBudget > 0 && (
             <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm mb-6">
               <div className="flex justify-between items-center mb-2">
@@ -788,7 +878,7 @@ export default function HomePage() {
           {/* --- FILTER & SORT (RASIO 55:45) --- */}
           <div className="flex flex-row gap-3 mb-6 w-full">
             {/* Bagian Tanggal - 55% Width */}
-            <div className="flex items-center justify-between bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl w-[58%] shadow-sm p-1 relative">
+            <div className="flex items-center justify-between bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl w-[61%] shadow-sm p-1 relative">
               <button
                 onClick={handlePrevMonth}
                 className="p-2 text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors shrink-0 z-20"
@@ -797,17 +887,22 @@ export default function HomePage() {
               </button>
 
               <div className="relative flex-1 text-center px-1 overflow-hidden group h-full flex items-center justify-center">
-                <span className="text-xs font-bold text-gray-700 dark:text-slate-200 truncate block pointer-events-none">
-                  {selectedMonth
-                    ? new Date(selectedMonth + "-01").toLocaleDateString(
-                        "id-ID",
-                        {
-                          month: "long",
-                          year: "numeric",
-                        },
-                      )
-                    : "Semua Waktu"}
-                </span>
+                <div
+                  key={selectedMonth}
+                  className="animate-in fade-in slide-in-from-bottom-2 duration-300"
+                >
+                  <span className="text-xs font-bold text-gray-700 dark:text-slate-200 truncate block pointer-events-none">
+                    {selectedMonth
+                      ? new Date(selectedMonth + "-01").toLocaleDateString(
+                          "id-ID",
+                          {
+                            month: "long",
+                            year: "numeric",
+                          },
+                        )
+                      : "Semua Waktu"}
+                  </span>
+                </div>
 
                 {/* INPUT TRANSPARAN (Trigger Date Picker) */}
                 <input
@@ -838,7 +933,7 @@ export default function HomePage() {
             </div>
 
             {/* Bagian Sort - 45% Width */}
-            <div className="relative w-[42%]">
+            <div className="relative w-[39%]">
               <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-slate-400 pointer-events-none">
                 <ArrowUpDown size={14} />
               </div>
@@ -860,7 +955,7 @@ export default function HomePage() {
 
           {/* LIST TRANSACTIONS */}
           {isLoading && page === 0 ? (
-            <div className="space-y-3 pb-4">
+            <div className="space-y-3 pb-4 animate-in fade-in duration-300">
               {[...Array(5)].map((_, i) => (
                 <div
                   key={i}
@@ -894,7 +989,7 @@ export default function HomePage() {
               </p>
             </div>
           ) : (
-            <div className="space-y-6 pb-4">
+            <div className="space-y-6 pb-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
               {groupedTransactionsList.map((group) => (
                 <div key={group.date}>
                   <h3 className="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-3 px-2">
