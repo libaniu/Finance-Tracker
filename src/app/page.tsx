@@ -25,6 +25,8 @@ import {
   Home,
   AlertCircle,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Filter,
   CircleArrowUp,
   CircleArrowDown,
@@ -195,6 +197,18 @@ export default function HomePage() {
     date: "",
     type: "expense" as "income" | "expense",
   });
+
+  const handlePrevMonth = () => {
+    const date = selectedMonth ? new Date(`${selectedMonth}-01`) : new Date();
+    date.setMonth(date.getMonth() - 1);
+    setSelectedMonth(date.toISOString().slice(0, 7));
+  };
+
+  const handleNextMonth = () => {
+    const date = selectedMonth ? new Date(`${selectedMonth}-01`) : new Date();
+    date.setMonth(date.getMonth() + 1);
+    setSelectedMonth(date.toISOString().slice(0, 7));
+  };
 
   const scrollToTop = () => {
     mainRef.current?.scrollTo({ top: 0, behavior: "smooth" });
@@ -771,41 +785,67 @@ export default function HomePage() {
             </div>
           )}
 
-          {/* FILTER & SORT (60:40 RATIO) */}
+          {/* --- FILTER & SORT (RASIO 55:45) --- */}
           <div className="flex flex-row gap-3 mb-6 w-full">
-            <div className="relative w-[58%]">
+            {/* Bagian Tanggal - 55% Width */}
+            <div className="flex items-center justify-between bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl w-[55%] shadow-sm p-1 relative">
               <button
-                onClick={() => monthInputRef.current?.showPicker()}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-slate-200"
+                onClick={handlePrevMonth}
+                className="p-2 text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors shrink-0 z-20"
               >
-                <Calendar size={14} />
+                <ChevronLeft size={16} />
               </button>
-              <input
-                ref={monthInputRef}
-                type="month"
-                value={selectedMonth}
-                onChange={(e) => setSelectedMonth(e.target.value)}
-                className="w-full bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-300 text-xs font-semibold pl-8 pr-2 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900 shadow-sm appearance-none min-w-0 [&::-webkit-calendar-picker-indicator]:opacity-100 [&::-webkit-calendar-picker-indicator]:brightness-0 dark:[&::-webkit-calendar-picker-indicator]:invert"
-              />
-              {selectedMonth && (
+
+              <div className="relative flex-1 text-center px-1 overflow-hidden group h-full flex items-center justify-center">
+                <span className="text-xs font-bold text-gray-700 dark:text-slate-200 truncate block pointer-events-none">
+                  {selectedMonth
+                    ? new Date(selectedMonth + "-01").toLocaleDateString(
+                        "id-ID",
+                        {
+                          month: "long",
+                          year: "numeric",
+                        },
+                      )
+                    : "Semua Waktu"}
+                </span>
+
+                {/* INPUT TRANSPARAN (Trigger Date Picker) */}
+                <input
+                  type="month"
+                  value={selectedMonth}
+                  onChange={(e) => setSelectedMonth(e.target.value)}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                />
+              </div>
+
+              <div className="flex items-center shrink-0 z-20">
+                {selectedMonth && (
+                  <button
+                    onClick={() => setSelectedMonth("")}
+                    className="p-1 text-gray-300 hover:text-red-500 transition-colors mr-1"
+                    title="Hapus Filter"
+                  >
+                    <X size={14} />
+                  </button>
+                )}
                 <button
-                  onClick={() => setSelectedMonth("")}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-200 p-1.5 rounded-full hover:bg-red-100 dark:hover:bg-red-900 hover:text-red-600 transition-colors"
-                  title="Tampilkan Semua (Hapus Filter)"
+                  onClick={handleNextMonth}
+                  className="p-2 text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
                 >
-                  <X size={11} />
+                  <ChevronRight size={16} />
                 </button>
-              )}
+              </div>
             </div>
 
-            <div className="relative w-[42%]">
+            {/* Bagian Sort - 45% Width */}
+            <div className="relative w-[45%]">
               <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-slate-400 pointer-events-none">
                 <ArrowUpDown size={14} />
               </div>
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="appearance-none w-full bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-300 text-xs font-semibold pl-8 pr-7 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900 shadow-sm truncate"
+                className="appearance-none w-full bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-300 text-xs font-semibold pl-8 pr-7 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900 shadow-sm truncate h-full"
               >
                 <option value="date-desc">Terbaru</option>
                 <option value="date-asc">Terlama</option>
