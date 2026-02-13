@@ -1,20 +1,55 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
-import { Loader2, Sparkles, Lock, User, ArrowRight } from "lucide-react";
+import {
+  Loader2,
+  Sparkles,
+  Lock,
+  User,
+  ArrowRight,
+  Sun,
+  Moon,
+} from "lucide-react";
 
 export default function LoginPage() {
   const [username, setUsername] = useState(""); // Ganti email jadi username
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(false);
   const [message, setMessage] = useState<{
     text: string;
     type: "error" | "success";
   } | null>(null);
   const router = useRouter();
+
+  // --- THEME HANDLER ---
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("theme");
+    const systemPrefersDark = window.matchMedia(
+      "(prefers-color-scheme: dark)",
+    ).matches;
+
+    if (savedTheme === "dark" || (!savedTheme && systemPrefersDark)) {
+      setIsDarkMode(true);
+      document.documentElement.classList.add("dark");
+    } else {
+      setIsDarkMode(false);
+      document.documentElement.classList.remove("dark");
+    }
+  }, []);
+
+  const toggleTheme = () => {
+    const newMode = !isDarkMode;
+    setIsDarkMode(newMode);
+    document.documentElement.classList.toggle("dark", newMode);
+    localStorage.setItem("theme", newMode ? "dark" : "light");
+    console.log(
+      `Tema: ${newMode ? "Dark" : "Light"} (Class 'dark' ${newMode ? "added" : "removed"})`,
+    );
+  };
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,6 +106,12 @@ export default function LoginPage() {
       <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl shadow-2xl overflow-hidden border border-gray-100 dark:border-slate-800">
         {/* Header */}
         <div className="bg-sky-700 p-8 text-center relative overflow-hidden">
+          <button
+            onClick={toggleTheme}
+            className="absolute top-4 right-4 z-20 bg-white/10 hover:bg-white/20 p-2 rounded-full backdrop-blur-md transition-all text-white active:scale-95"
+          >
+            {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
+          </button>
           <div className="absolute top-0 left-0 w-full h-full bg-linear-to-br from-sky-600 to-purple-600 opacity-50"></div>
           <div className="relative z-10">
             <div className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
