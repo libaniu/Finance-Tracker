@@ -35,39 +35,32 @@ export async function POST(req: Request) {
 
     const genAI = new GoogleGenerativeAI(apiKey);
 
-    // 2. GUNAKAN MODEL STABIL (1.5 Flash)
-    // Jangan pakai 2.5 dulu karena belum stabil untuk semua akun
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    // 2. GUNAKAN MODEL STABIL (1.5 Flash) dengan JSON Mode
+    const model = genAI.getGenerativeModel({
+      model: "gemini-1.5-flash",
+      generationConfig: { responseMimeType: "application/json" },
+    });
 
     const base64Data = image.replace(
       /^data:image\/(png|jpeg|jpg|webp);base64,/,
       "",
     );
 
-    const prompt = `Analyze this receipt image. Extract data into raw JSON:
-    {
+    // Prompt disederhanakan, karena kita sudah meminta JSON secara eksplisit
+    const prompt = `Analyze this receipt image. Extract the store name, total amount, date, and category. Use today's date (YYYY-MM-DD) if the date is missing. Pick one category from the list: [${CATEGORIES}]. The final JSON object should look like this: {
       "title": "Store name (short)",
       "amount": "Total amount (number only)",
       "date": "YYYY-MM-DD (use today if missing)",
-      "category": "Pick one: [${CATEGORIES}]"
-    }
-    No markdown. Just JSON.`;
+      "category": "Chosen category"
+    }`;
 
     const result = await model.generateContent([
       prompt,
       { inlineData: { data: base64Data, mimeType: "image/jpeg" } },
     ]);
 
-    const response = await result.response;
-    let text = response.text();
-
-    // Bersihkan format markdown jika ada
-    text = text
-      .replace(/```json/g, "")
-      .replace(/```/g, "")
-      .trim();
-
-    const parsedData = JSON.parse(text);
+    // Tidak perlu parsing manual, Gemini sudah memberikan objek JSON
+    const parsedData = JSON.parse(result.response.text());
 
     return NextResponse.json(parsedData);
   } catch (error: any) {

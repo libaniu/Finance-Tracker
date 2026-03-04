@@ -1,14 +1,16 @@
-import { MetadataRoute } from 'next';
+import { MetadataRoute } from "next";
 
 // PERHATIKAN: Harus ada kata 'default' setelah 'export'
 export default function robots(): MetadataRoute.Robots {
-  const baseUrl = 'https://wallet-bice-beta.vercel.app';
+  // Gunakan environment variable, dengan fallback ke URL produksi
+  const baseUrl =
+    process.env.NEXT_PUBLIC_BASE_URL || "https://wallet-bice-beta.vercel.app";
 
   return {
     rules: {
-      userAgent: '*',
-      allow: '/',
-      disallow: '/private/',
+      userAgent: "*",
+      allow: "/",
+      disallow: "/private/",
     },
     sitemap: `${baseUrl}/sitemap.xml`,
   };

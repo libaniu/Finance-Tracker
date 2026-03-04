@@ -330,33 +330,34 @@ export default function StatsPage() {
   };
 
   // Get Data
-  const totalIncome = filteredTransactions
-    .filter((t) => t.type === "income")
-    .reduce((acc, t) => acc + t.amount, 0);
-  const totalExpense = filteredTransactions
-    .filter((t) => t.type === "expense")
-    .reduce((acc, t) => acc + t.amount, 0);
+  const { totalIncome, totalExpense, summaryData, expenseChartData, incomeChartData, fullExpenseList } = useMemo(() => {
+    const incomeTransactions = filteredTransactions.filter((t) => t.type === "income");
+    const expenseTransactions = filteredTransactions.filter((t) => t.type === "expense");
 
-  const summaryData = [
-    { name: "Pemasukan", value: totalIncome },
-    { name: "Pengeluaran", value: totalExpense },
-  ];
+    const totalIncome = incomeTransactions.reduce((acc, t) => acc + t.amount, 0);
+    const totalExpense = expenseTransactions.reduce((acc, t) => acc + t.amount, 0);
 
-  const expenseChartData = processChartData("expense");
-  const incomeChartData = processChartData("income");
+    const summaryData = [
+      { name: "Pemasukan", value: totalIncome },
+      { name: "Pengeluaran", value: totalExpense },
+    ];
 
-  // Data List Detail (Full List tanpa grouping Others untuk list bawah)
-  const fullExpenseList = Object.entries(
-    filteredTransactions
-      .filter((t) => t.type === "expense")
-      .reduce((acc: any, curr) => {
+    const expenseChartData = processChartData("expense");
+    const incomeChartData = processChartData("income");
+
+    const fullExpenseList = Object.entries(
+      expenseTransactions.reduce((acc: any, curr) => {
         const cat = curr.category || "Lainnya";
         acc[cat] = (acc[cat] || 0) + curr.amount;
         return acc;
       }, {}),
-  )
-    .map(([name, value]) => ({ name, value: value as number }))
-    .sort((a, b) => b.value - a.value);
+    )
+      .map(([name, value]) => ({ name, value: value as number }))
+      .sort((a, b) => b.value - a.value);
+
+    return { totalIncome, totalExpense, summaryData, expenseChartData, incomeChartData, fullExpenseList };
+  }, [filteredTransactions]); // processChartData perlu di-memoize atau dipindah ke luar komponen
+
 
   const formatDateDisplay = (dateStr: string) => {
     if (!dateStr) return "-";
@@ -678,7 +679,7 @@ export default function StatsPage() {
 
                       return (
                         <div key={idx} className="flex flex-col gap-1">
-                          <div className="flex justify-between items-center text-xs">
+                          <div className="flex justify-between items-center text-xs gap-2">
                             <div className="flex items-center gap-2">
                               <div
                                 className={`w-6 h-6 flex items-center justify-center rounded-full shrink-0 ${getCategoryColor(item.name, "expense")}`}
@@ -686,7 +687,7 @@ export default function StatsPage() {
                                 {getCategoryIcon(item.name, "expense")}
                               </div>
                               <span className="text-gray-700 dark:text-slate-300 font-medium truncate max-w-30">
-                                {item.name}
+                                {item.name || "Lainnya"}
                               </span>
                             </div>
                             <div className="text-right">
