@@ -13,17 +13,20 @@ export async function POST(req: Request) {
   try {
     const { transactions, summary } = await req.json();
 
+    const userProfile = {
+      age: 30,
+      occupation: "Software Engineer",
+      riskTolerance: "Moderate",
+    };
+
     promptText = `
       Bertindaklah sebagai teman yang ahli keuangan.
-      
+      Usia user ${userProfile.age} tahun, bekerja sebagai ${userProfile.occupation}, dengan toleransi risiko ${userProfile.riskTolerance}.
       Data:
       - Masuk: Rp ${summary.income.toLocaleString("id-ID")}
       - Keluar: Rp ${summary.expense.toLocaleString("id-ID")}
       - Saldo: Rp ${summary.balance.toLocaleString("id-ID")}
-      
-      Top Pengeluaran:
-      ${transactions.map((t: any) => `- ${t.title}: Rp ${t.amount.toLocaleString("id-ID")}`).join("\n")}
-
+      Top Pengeluaran: ${transactions.map((t: any) => `- ${t.title}: Rp ${t.amount.toLocaleString("id-ID")}`).join("\n")}
       Berikan 3 saran singkat & pedas (maksimal 2 kalimat per poin).
     `;
 
@@ -41,7 +44,6 @@ export async function POST(req: Request) {
   } catch (error: any) {
     console.error("❌ Error:", error.message);
 
-    // Kalau 2.5 gagal juga, kita coba model "cadangan terakhir" (gemini-flash-latest)
     if (error.message.includes("404") || error.message.includes("not found")) {
       console.log("🔄 Mencoba fallback ke 'gemini-flash-latest'...");
       try {
@@ -56,10 +58,9 @@ export async function POST(req: Request) {
       }
     }
 
-    // Pesan santuy kalau limit
     if (error.message.includes("429")) {
       return NextResponse.json({
-        advice: "Duh, AI-nya lagi rame antrian. Coba nanti lagi ya! ⏳",
+        advice: "Coba lagi nanti ⏳",
       });
     }
 
