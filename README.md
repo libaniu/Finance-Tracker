@@ -1,53 +1,40 @@
-# 💸 Myllet - Smart Finance Tracker
+# Myllet Personal Finance Tracker
 
-<div align="center">
+Aplikasi web *mobile-first* untuk mencatat dan mengelola keuangan pribadi (pemasukan dan pengeluaran) secara efisien dengan bantuan AI.
 
-![Next.js](https://img.shields.io/badge/Next.js-14-black?style=for-the-badge&logo=next.js)
-![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)
-![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
-![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)
-![Gemini AI](https://img.shields.io/badge/Google%20Gemini-8E75B2?style=for-the-badge&logo=google&logoColor=white)
+## Teknologi
 
-<p>Aplikasi pencatat keuangan pintar berbasis Mobile-First dengan dukungan AI Advisor.</p>
+Next.js, TypeScript, Tailwind CSS, Supabase, dan Google Gemini AI.
 
-</div>
+## Fitur Utama
 
----
+- Pencatatan cepat untuk transaksi harian (pemasukan & pengeluaran).
+- **AI Receipt Scanner**: Otomatis membaca data dari foto struk belanja menggunakan AI.
+- **Financial Advisor (AI)**: Memberikan saran keuangan personal berdasarkan data transaksi.
+- Dashboard statistik, filter bulan, dan fitur limit anggaran bulanan (*Smart Budgeting*).
+- Portal autentikasi (login/register) menggunakan Supabase Auth.
 
-## ✨ Fitur Unggulan
+## Cara Menjalankan Proyek
 
-Aplikasi ini dibangun untuk memudahkan manajemen keuangan harian dengan teknologi modern:
+1.  Clone repositori & instal dependensi:
 
-### 🤖 AI Financial Advisor
-- Terintegrasi dengan **Google Gemini AI**.
-- Memberikan analisa keuangan, saran penghematan, dan kritik pedas yang membangun.
-- Tampilan chat yang rapi (Markdown support).
+    ```bash
+    git clone https://github.com/libaniu/myllet
+    cd myllet
+    npm install
+    ```
 
-### 📊 Statistik & Laporan
-- **Visualisasi Data:** Grafik Donut Chart (Pie Chart) interaktif untuk Pemasukan & Pengeluaran.
-- **Custom Date Range:** Filter transaksi berdasarkan periode bebas (bukan hanya bulanan).
-- **Export to Excel:** Download laporan keuangan rapi (.xlsx) dengan *auto-width column* sesuai periode yang dipilih.
+2.  Buat file .env.local di root folder dan isi konfigurasi database beserta API Key:
 
-### 💰 Manajemen Budget
-- Atur batas pengeluaran bulanan.
-- **Smart Validation:** Sistem menolak jika budget yang diatur melebihi total pemasukan.
-- Progress bar visual untuk memantau sisa budget.
+    ```env
+    NEXT_PUBLIC_SUPABASE_URL=https://<project-id>.supabase.co
+    NEXT_PUBLIC_SUPABASE_ANON_KEY=<your-anon-key>
+    GEMINI_API_KEY=<your-gemini-api-key>
+    ```
 
-### 📱 Mobile First Experience (PWA)
-- Desain responsif seperti aplikasi native.
-- Bisa di-install (Add to Home Screen) di Android/iOS.
-- Navigasi yang mudah dengan Bottom Bar.
 
----
-
-## 🛠️ Teknologi
-
-| Kategori | Teknologi |
-| :--- | :--- |
-| **Framework** | Next.js 14 (App Router) |
-| **Language** | TypeScript |
-| **Database** | Supabase (PostgreSQL) |
-| **AI Model** | Gemini 2.5 Flash |
-| **Styling** | Tailwind CSS & Lucide React |
-| **Charts** | Recharts |
-| **Export** | SheetJS (XLSX) |
+3.  Jalankan server lokal:
+    ```Bash
+    npm run dev
+    ```
+    Buka http://localhost:3000.
